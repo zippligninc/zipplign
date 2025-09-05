@@ -43,6 +43,13 @@ export default function ProfilePage() {
 
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Function to refresh profile data
+  const refreshProfileData = useCallback(async () => {
+    if (user) {
+      await fetchProfileData(user);
+    }
+  }, [user, fetchProfileData]);
+
   const fetchProfileData = useCallback(async (user: User) => {
     try {
       console.log('Fetching profile data for user:', user.id);
@@ -99,6 +106,52 @@ export default function ProfilePage() {
         setZippclips(clipsData);
       } else {
         setZippclips([]);
+      }
+
+      // Fetch real-time follower counts
+      const [followersResult, followingResult, likesResult] = await Promise.all([
+        supabase
+          .from('follows')
+          .select('id', { count: 'exact' })
+          .eq('following_id', user.id),
+        supabase
+          .from('follows')
+          .select('id', { count: 'exact' })
+          .eq('follower_id', user.id),
+        supabase
+          .from('likes')
+          .select('id', { count: 'exact' })
+          .in('zippclip_id', clipsData?.map(clip => clip.id) || [])
+      ]);
+
+      console.log('Follower counts:', { 
+        followers: followersResult.count, 
+        following: followingResult.count, 
+        likes: likesResult.count 
+      });
+
+      // Update profile with real-time counts
+      if (profileData) {
+        setProfile({
+          ...profileData,
+          zipping_count: clipsData?.length || 0,
+          zippers_count: followersResult.count || 0,
+          likes_count: likesResult.count || 0
+        });
+      } else {
+        // Update default profile with real-time counts
+        const defaultProfile = {
+          id: user.id,
+          username: user.email?.split('@')[0] || 'user',
+          full_name: user.user_metadata?.full_name || 'User',
+          avatar_url: user.user_metadata?.avatar_url || '',
+          bio: '',
+          cover_url: '',
+          zipping_count: clipsData?.length || 0,
+          zippers_count: followersResult.count || 0,
+          likes_count: likesResult.count || 0
+        };
+        setProfile(defaultProfile);
       }
 
     } catch (error) {
@@ -253,21 +306,36 @@ export default function ProfilePage() {
             </Button>
         </div>
 
-        <div className="flex justify-around w-full mt-3 text-center border border-border rounded-lg p-1.5">
-            <div>
-                <p className="font-bold text-xs">{profile?.zipping_count ?? 0}</p>
-                <p className="text-[10px] text-muted-foreground">zipping</p>
+        <div className="flex items-center justify-between w-full mt-3">
+            <div className="flex justify-around w-full text-center border border-border rounded-lg p-1.5">
+                <div>
+                    <p className="font-bold text-xs">{profile?.zipping_count ?? 0}</p>
+                    <p className="text-[10px] text-muted-foreground">zipping</p>
+                </div>
+                <div className="border-l border-border h-5 self-center" />
+                <div>
+                    <p className="font-bold text-xs">{profile?.zippers_count ?? 0}</p>
+                    <p className="text-[10px] text-muted-foreground">zippers</p>
+                </div>
+                <div className="border-l border-border h-5 self-center" />
+                <div>
+                    <p className="font-bold text-xs">{profile?.likes_count ?? 0}</p>
+                    <p className="text-[10px] text-muted-foreground">Like</p>
+                </div>
             </div>
-            <div className="border-l border-border h-5 self-center" />
-            <div>
-                <p className="font-bold text-xs">{profile?.zippers_count ?? 0}</p>
-                <p className="text-[10px] text-muted-foreground">zippers</p>
-            </div>
-            <div className="border-l border-border h-5 self-center" />
-            <div>
-                <p className="font-bold text-xs">{profile?.likes_count ?? 0}</p>
-                <p className="text-[10px] text-muted-foreground">Like</p>
-            </div>
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                className="ml-2 h-6 w-6 p-0" 
+                onClick={refreshProfileData}
+                disabled={loading}
+            >
+                {loading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                    <PlayCircle className="h-3 w-3" />
+                )}
+            </Button>
         </div>
         
         {profile?.bio ? (

@@ -45,49 +45,104 @@ export default function ProfilePage() {
 
   const fetchProfileData = useCallback(async (user: User) => {
     try {
+      console.log('Fetching profile data for user:', user.id);
       setLoading(true);
       setLoadingClips(true);
       
+      // Fetch profile data
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select(`*`)
         .eq('id', user.id)
         .single();
 
-      if (profileError && profileError.status !== 406) throw profileError;
-      if (profileData) setProfile(profileData);
+      console.log('Profile data result:', { profileData, profileError });
+
+      if (profileError && profileError.status !== 406) {
+        console.error('Profile error:', profileError);
+        throw profileError;
+      }
       
+      if (profileData) {
+        setProfile(profileData);
+      } else {
+        // Create default profile if none exists
+        const defaultProfile = {
+          id: user.id,
+          username: user.email?.split('@')[0] || 'user',
+          full_name: user.user_metadata?.full_name || 'User',
+          avatar_url: user.user_metadata?.avatar_url || '',
+          bio: '',
+          cover_url: '',
+          zipping_count: 0,
+          zippers_count: 0,
+          likes_count: 0
+        };
+        setProfile(defaultProfile);
+      }
+      
+      // Fetch zippclips
       const { data: clipsData, error: clipsError } = await supabase
         .from('zippclips')
         .select('id, media_url, media_type')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (clipsError) throw clipsError;
-      if (clipsData) setZippclips(clipsData);
+      console.log('Clips data result:', { clipsData, clipsError });
+
+      if (clipsError) {
+        console.error('Clips error:', clipsError);
+        throw clipsError;
+      }
+      
+      if (clipsData) {
+        setZippclips(clipsData);
+      } else {
+        setZippclips([]);
+      }
 
     } catch (error) {
+      console.error('Error in fetchProfileData:', error);
       if (error instanceof Error) {
         toast({ title: "Error loading profile", description: error.message, variant: "destructive" });
       }
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
       setLoadingClips(false);
     }
-  }, []);
+  }, [toast]);
   
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        fetchProfileData(session.user);
-      } else {
-        router.push('/login');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          await fetchProfileData(session.user);
+        } else {
+          router.push('/login');
+        }
+      } catch (error) {
+        console.error('Error checking user session:', error);
+        setLoading(false);
+        setLoadingClips(false);
       }
     };
+    
     checkUser();
-  }, []);
+    
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log('Profile loading timeout reached');
+        setLoading(false);
+        setLoadingClips(false);
+      }
+    }, 10000); // 10 second timeout
+    
+    return () => clearTimeout(timeoutId);
+  }, [fetchProfileData, router, loading]);
 
 
   const handleFeatureClick = (featureName: string) => {

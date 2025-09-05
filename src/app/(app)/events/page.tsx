@@ -60,7 +60,7 @@ export default function EventsPage() {
           
           <h1 className="text-2xl font-bold mb-4">Zipplign Events</h1>
           <p className="text-gray-400 mb-8">
-            Discover and join exciting events, meetups, and live performances by Zippers in your area.
+            Discover and join exciting events, meetups, and live performances by Zippers in your area. Powered by MyEventAdvisor.
           </p>
           
           <div className="grid grid-cols-2 gap-4 mb-8">
@@ -78,16 +78,23 @@ export default function EventsPage() {
           </div>
           
           <div className="space-y-3">
-            <Button className="w-full bg-teal-600 hover:bg-teal-700">
+            <Button 
+              className="w-full bg-teal-600 hover:bg-teal-700"
+              onClick={() => window.open('https://www.myeventadvisor.com/events', '_blank')}
+            >
               Browse Upcoming Events
             </Button>
-            <Button variant="outline" className="w-full border-teal-600 text-teal-400 hover:bg-teal-600/10">
+            <Button 
+              variant="outline" 
+              className="w-full border-teal-600 text-teal-400 hover:bg-teal-600/10"
+              onClick={() => window.open('https://www.myeventadvisor.com/create-event', '_blank')}
+            >
               Create New Event
             </Button>
           </div>
           
           <p className="text-xs text-gray-500 mt-6">
-            Coming Soon - Events functionality will be available soon!
+            Events powered by <a href="https://www.myeventadvisor.com" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:text-teal-300 underline">MyEventAdvisor</a>
           </p>
         </div>
       </div>

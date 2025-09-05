@@ -38,10 +38,11 @@ type Zippclip = {
 };
 
 const navItems = [
-    { href: '/home', label: 'For You' },
+    { href: '/events', label: 'Events' },
     { href: '/zippers', label: 'Zippers' },
+    { href: '/store', label: 'Store' },
+    { href: '/home', label: 'For You' },
     { href: '/live', label: 'Live' },
-    { href: '/shop', label: 'Shop' },
 ];
 
 const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) => {

@@ -3,19 +3,20 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, ShoppingBag, Star, Heart } from 'lucide-react';
+import { Bell, Calendar, MapPin, Clock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ZippLineLogo } from '@/components/common/zippline-logo';
 
 const navItems = [
-    { href: '/home', label: 'For You' },
+    { href: '/events', label: 'Events' },
     { href: '/zippers', label: 'Zippers' },
+    { href: '/store', label: 'Store' },
+    { href: '/home', label: 'For You' },
     { href: '/live', label: 'Live' },
-    { href: '/shop', label: 'Shop' },
 ];
 
-function ShopHeader() {
+function EventsHeader() {
     const pathname = usePathname();
     return (
         <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 text-white">
@@ -45,48 +46,48 @@ function ShopHeader() {
     );
 }
 
-export default function ShopPage() {
+export default function EventsPage() {
   return (
     <div className="h-screen bg-black text-white overflow-hidden">
-      <ShopHeader />
+      <EventsHeader />
       
       <div className="h-full pt-16 pb-24 flex flex-col items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="mb-8">
             <ZippLineLogo className="w-20 h-20 mx-auto mb-6" />
-            <ShoppingBag className="w-16 h-16 mx-auto text-teal-400 mb-4" />
+            <Calendar className="w-16 h-16 mx-auto text-teal-400 mb-4" />
           </div>
           
-          <h1 className="text-2xl font-bold mb-4">Zipplign Shop</h1>
+          <h1 className="text-2xl font-bold mb-4">Zipplign Events</h1>
           <p className="text-gray-400 mb-8">
-            Discover exclusive merchandise, digital products, and premium features for Zippers.
+            Discover and join exciting events, meetups, and live performances by Zippers in your area.
           </p>
           
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-              <Star className="w-8 h-8 mx-auto text-yellow-400 mb-2" />
-              <h3 className="font-semibold mb-1">Premium Features</h3>
-              <p className="text-xs text-gray-400">Unlock advanced tools</p>
+              <MapPin className="w-8 h-8 mx-auto text-green-400 mb-2" />
+              <h3 className="font-semibold mb-1">Local Events</h3>
+              <p className="text-xs text-gray-400">Find events near you</p>
             </div>
             
             <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-              <Heart className="w-8 h-8 mx-auto text-red-400 mb-2" />
-              <h3 className="font-semibold mb-1">Merchandise</h3>
-              <p className="text-xs text-gray-400">Zipplign branded items</p>
+              <Users className="w-8 h-8 mx-auto text-blue-400 mb-2" />
+              <h3 className="font-semibold mb-1">Community</h3>
+              <p className="text-xs text-gray-400">Connect with Zippers</p>
             </div>
           </div>
           
           <div className="space-y-3">
             <Button className="w-full bg-teal-600 hover:bg-teal-700">
-              Browse Premium Features
+              Browse Upcoming Events
             </Button>
             <Button variant="outline" className="w-full border-teal-600 text-teal-400 hover:bg-teal-600/10">
-              View Merchandise
+              Create New Event
             </Button>
           </div>
           
           <p className="text-xs text-gray-500 mt-6">
-            Coming Soon - Shop functionality will be available soon!
+            Coming Soon - Events functionality will be available soon!
           </p>
         </div>
       </div>

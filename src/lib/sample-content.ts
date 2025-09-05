@@ -1,0 +1,268 @@
+// Free video sources and mock users for Zipplign
+export const mockUsers = [
+  {
+    id: '1',
+    username: 'alex_creative',
+    full_name: 'Alex Creative',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    bio: 'Creative content creator 🎨',
+    zipping_count: 1250,
+    zippers_count: 8900,
+    likes_count: 45600
+  },
+  {
+    id: '2',
+    username: 'sarah_adventures',
+    full_name: 'Sarah Adventures',
+    avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+    bio: 'Adventure seeker 🌍',
+    zipping_count: 890,
+    zippers_count: 5600,
+    likes_count: 23400
+  },
+  {
+    id: '3',
+    username: 'mike_tech',
+    full_name: 'Mike Tech',
+    avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    bio: 'Tech enthusiast 💻',
+    zipping_count: 2100,
+    zippers_count: 12000,
+    likes_count: 67800
+  },
+  {
+    id: '4',
+    username: 'emma_music',
+    full_name: 'Emma Music',
+    avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+    bio: 'Music lover 🎵',
+    zipping_count: 750,
+    zippers_count: 4200,
+    likes_count: 18900
+  },
+  {
+    id: '5',
+    username: 'david_fitness',
+    full_name: 'David Fitness',
+    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+    bio: 'Fitness coach 💪',
+    zipping_count: 1800,
+    zippers_count: 9800,
+    likes_count: 45200
+  },
+  {
+    id: '6',
+    username: 'lisa_food',
+    full_name: 'Lisa Food',
+    avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
+    bio: 'Food blogger 🍕',
+    zipping_count: 3200,
+    zippers_count: 15600,
+    likes_count: 89200
+  },
+  {
+    id: '7',
+    username: 'james_travel',
+    full_name: 'James Travel',
+    avatar_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face',
+    bio: 'Travel photographer 📸',
+    zipping_count: 1450,
+    zippers_count: 7800,
+    likes_count: 34500
+  },
+  {
+    id: '8',
+    username: 'sophia_art',
+    full_name: 'Sophia Art',
+    avatar_url: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face',
+    bio: 'Digital artist 🎨',
+    zipping_count: 980,
+    zippers_count: 5600,
+    likes_count: 26700
+  }
+];
+
+export const freeVideoSources = [
+  {
+    id: '1',
+    user_id: '1',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    media_type: 'video',
+    description: 'Amazing sunset view from the mountains! 🌅',
+    song: 'Sunset Dreams',
+    song_avatar_url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop',
+    likes: 1250,
+    comments: 89,
+    saves: 234,
+    shares: 45,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '2',
+    user_id: '2',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    media_type: 'video',
+    description: 'Epic adventure in the wild! 🦁',
+    song: 'Wild Adventure',
+    song_avatar_url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=100&h=100&fit=crop',
+    likes: 890,
+    comments: 67,
+    saves: 156,
+    shares: 23,
+    created_at: new Date(Date.now() - 3600000).toISOString()
+  },
+  {
+    id: '3',
+    user_id: '3',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    media_type: 'video',
+    description: 'Tech innovation at its finest! 💻',
+    song: 'Digital Vibes',
+    song_avatar_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop',
+    likes: 2100,
+    comments: 145,
+    saves: 378,
+    shares: 67,
+    created_at: new Date(Date.now() - 7200000).toISOString()
+  },
+  {
+    id: '4',
+    user_id: '4',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    media_type: 'video',
+    description: 'Music that touches the soul 🎵',
+    song: 'Soul Music',
+    song_avatar_url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop',
+    likes: 750,
+    comments: 45,
+    saves: 123,
+    shares: 18,
+    created_at: new Date(Date.now() - 10800000).toISOString()
+  },
+  {
+    id: '5',
+    user_id: '5',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    media_type: 'video',
+    description: 'Fitness journey transformation! 💪',
+    song: 'Workout Beat',
+    song_avatar_url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=100&h=100&fit=crop',
+    likes: 1800,
+    comments: 98,
+    saves: 267,
+    shares: 34,
+    created_at: new Date(Date.now() - 14400000).toISOString()
+  },
+  {
+    id: '6',
+    user_id: '6',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+    media_type: 'video',
+    description: 'Delicious homemade pasta recipe! 🍝',
+    song: 'Cooking Vibes',
+    song_avatar_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop',
+    likes: 3200,
+    comments: 189,
+    saves: 456,
+    shares: 78,
+    created_at: new Date(Date.now() - 18000000).toISOString()
+  },
+  {
+    id: '7',
+    user_id: '7',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+    media_type: 'video',
+    description: 'Beautiful travel destination! ✈️',
+    song: 'Travel Dreams',
+    song_avatar_url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop',
+    likes: 1450,
+    comments: 76,
+    saves: 189,
+    shares: 29,
+    created_at: new Date(Date.now() - 21600000).toISOString()
+  },
+  {
+    id: '8',
+    user_id: '8',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+    media_type: 'video',
+    description: 'Digital art creation process 🎨',
+    song: 'Creative Flow',
+    song_avatar_url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=100&h=100&fit=crop',
+    likes: 980,
+    comments: 54,
+    saves: 134,
+    shares: 21,
+    created_at: new Date(Date.now() - 25200000).toISOString()
+  },
+  {
+    id: '9',
+    user_id: '1',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+    media_type: 'video',
+    description: 'Creative photography tips! 📸',
+    song: 'Photo Magic',
+    song_avatar_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop',
+    likes: 1670,
+    comments: 112,
+    saves: 298,
+    shares: 43,
+    created_at: new Date(Date.now() - 28800000).toISOString()
+  },
+  {
+    id: '10',
+    user_id: '2',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
+    media_type: 'video',
+    description: 'Amazing nature documentary! 🌿',
+    song: 'Nature Sounds',
+    song_avatar_url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop',
+    likes: 1120,
+    comments: 83,
+    saves: 201,
+    shares: 35,
+    created_at: new Date(Date.now() - 32400000).toISOString()
+  },
+  {
+    id: '11',
+    user_id: '3',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+    media_type: 'video',
+    description: 'Latest tech gadget review! 📱',
+    song: 'Tech Beat',
+    song_avatar_url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=100&h=100&fit=crop',
+    likes: 2340,
+    comments: 156,
+    saves: 389,
+    shares: 62,
+    created_at: new Date(Date.now() - 36000000).toISOString()
+  },
+  {
+    id: '12',
+    user_id: '4',
+    media_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4',
+    media_type: 'video',
+    description: 'Live music performance! 🎤',
+    song: 'Live Performance',
+    song_avatar_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop',
+    likes: 890,
+    comments: 67,
+    saves: 145,
+    shares: 24,
+    created_at: new Date(Date.now() - 39600000).toISOString()
+  }
+];
+
+export const sampleZippclips = freeVideoSources.map((clip, index) => ({
+  id: clip.id,
+  profiles: mockUsers.find(user => user.id === clip.user_id) || mockUsers[0],
+  description: clip.description,
+  song: clip.song,
+  likes: clip.likes,
+  comments: clip.comments,
+  saves: clip.saves,
+  shares: clip.shares,
+  media_url: clip.media_url,
+  media_type: clip.media_type as 'image' | 'video',
+  song_avatar_url: clip.song_avatar_url
+}));

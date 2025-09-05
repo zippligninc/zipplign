@@ -1,0 +1,482 @@
+'use client';
+
+import React, { useEffect, useState, useRef } from 'react';
+import { Bell, Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { ZippLineLogo } from '@/components/common/zippline-logo';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { useTouchGestures, useHapticFeedback, useDeviceCapabilities } from '@/hooks/use-touch-gestures';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from '@/components/ui/carousel';
+import { VideoUIOverlay } from '@/components/home/video-ui-overlay';
+import { LazyMedia } from '@/components/optimized/lazy-media';
+import { ZippclipGridSkeleton, LoadingOverlay } from '@/components/ui/loading-states';
+import { ErrorBoundary } from '@/components/error/error-boundary';
+import { PerformanceOptimizer } from '@/lib/performance';
+
+type Profile = {
+  username: string;
+  full_name: string;
+  avatar_url: string;
+};
+
+type Zippclip = {
+  id: string;
+  profiles: Profile | null;
+  description: string;
+  song: string;
+  likes: number;
+  comments: number;
+  saves: number;
+  shares: number;
+  media_url: string;
+  media_type: 'image' | 'video';
+  song_avatar_url: string;
+};
+
+const navItems = [
+    { href: '/home', label: 'For You' },
+    { href: '/zippers', label: 'Zippers' },
+    { href: '/live', label: 'Live' },
+];
+
+const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const { triggerHaptic } = useHapticFeedback();
+  const { isMobile } = useDeviceCapabilities();
+  
+  // Handle case where profiles might be null
+  const user = clip.profiles || {
+    username: 'unknown',
+    full_name: 'Unknown User',
+    avatar_url: ''
+  };
+
+  useEffect(() => {
+    if (clip.media_type === 'video' && videoRef.current) {
+      if (isActive) {
+        videoRef.current.play().catch(error => {
+          console.warn("Autoplay prevented: ", error);
+          setIsPlaying(false);
+        });
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+        videoRef.current.currentTime = 0;
+      }
+    }
+  }, [isActive, clip.media_type]);
+
+  const handleVideoError = () => {
+    console.error('Video failed to load:', clip.media_url);
+    setHasError(true);
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play();
+        setIsPlaying(true);
+      }
+      // Haptic feedback on mobile
+      if (isMobile) {
+        triggerHaptic('light');
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+      if (isMobile) {
+        triggerHaptic('light');
+      }
+    }
+  };
+
+  const handleTouchStart = () => {
+    setShowControls(true);
+    setTimeout(() => setShowControls(false), 3000);
+  };
+
+  if (hasError) {
+    return (
+      <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <p className="text-sm">Failed to load video</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={() => {
+              setHasError(false);
+              if (videoRef.current) {
+                videoRef.current.load();
+              }
+            }}
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="relative w-full h-full bg-black"
+      onTouchStart={handleTouchStart}
+      onClick={handleTouchStart}
+    >
+      {clip.media_type === 'video' ? (
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          loop
+          muted={isMuted}
+          playsInline
+          onError={handleVideoError}
+        >
+          <source src={clip.media_url} type="video/mp4" />
+        </video>
+      ) : (
+        <LazyMedia
+          src={clip.media_url}
+          alt={clip.description}
+          className="w-full h-full object-cover"
+        />
+      )}
+
+      {/* Video Controls Overlay */}
+      {clip.media_type === 'video' && showControls && (
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+          <Button
+            variant="ghost"
+            size="lg"
+            className="h-16 w-16 rounded-full bg-black/50 hover:bg-black/70"
+            onClick={togglePlay}
+          >
+            {isPlaying ? (
+              <Pause className="h-8 w-8 text-white" />
+            ) : (
+              <Play className="h-8 w-8 text-white" />
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Mute Button */}
+      {clip.media_type === 'video' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70"
+          onClick={toggleMute}
+        >
+          {isMuted ? (
+            <VolumeX className="h-4 w-4 text-white" />
+          ) : (
+            <Volume2 className="h-4 w-4 text-white" />
+          )}
+        </Button>
+      )}
+
+      {/* Video UI Overlay */}
+      <VideoUIOverlay
+        user={user}
+        description={clip.description}
+        song={clip.song}
+        likes={clip.likes}
+        comments={clip.comments}
+        saves={clip.saves}
+        shares={clip.shares}
+        song_avatar_url={clip.song_avatar_url}
+        media_url={clip.media_url}
+        media_type={clip.media_type}
+      />
+    </div>
+  );
+};
+
+function ZippersHeader() {
+    const pathname = usePathname();
+    return (
+        <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 text-white">
+            <div className="flex items-center gap-4 pl-2">
+                {navItems.map((item) => (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                            'text-xs font-medium transition-colors',
+                            pathname === item.href
+                                ? 'text-white border-b-2 border-white pb-0.5'
+                                : 'text-white/60 hover:text-white/90'
+                        )}
+                    >
+                        {item.label}
+                    </Link>
+                ))}
+            </div>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-white/80 hover:bg-transparent hover:text-white" asChild>
+              <Link href="/notifications">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Notifications</span>
+              </Link>
+            </Button>
+        </header>
+    );
+}
+
+export default function ZippersPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const { toast } = useToast();
+  const [api, setApi] = React.useState<CarouselApi>()
+  const [current, setCurrent] = React.useState(0)
+  const [count, setCount] = React.useState(0)
+  const [zippclips, setZippclips] = useState<Zippclip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<Error | null>(null);
+
+  // Touch gestures
+  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchGestures({
+    onSwipeUp: () => {
+      if (api && current < count - 1) {
+        api.scrollNext();
+      }
+    },
+    onSwipeDown: () => {
+      if (api && current > 0) {
+        api.scrollPrev();
+      }
+    },
+  });
+
+  React.useEffect(() => {
+    if (!api) {
+      return
+    }
+
+    setCount(api.scrollSnapList().length)
+    setCurrent(api.selectedScrollSnap() + 1)
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap() + 1)
+    })
+  }, [api])
+
+  const fetchFollowingZippclips = React.useCallback(async () => {
+    if (!supabase) {
+      setFetchError(new Error('Database connection not available'));
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setFetchError(null);
+      
+      // First get the current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setLoading(false);
+        return;
+      }
+
+      // Get users that the current user follows
+      const { data: followingData, error: followingError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', session.user.id);
+
+      if (followingError) throw followingError;
+
+      // If user follows no one, show empty state
+      if (!followingData || followingData.length === 0) {
+        setZippclips([]);
+        setLoading(false);
+        return;
+      }
+
+      const followingIds = followingData.map(f => f.following_id);
+
+      // Get zippclips from followed users
+      const { data, error } = await supabase
+        .from('zippclips')
+        .select(`
+          id,
+          description,
+          media_url,
+          media_type,
+          likes,
+          comments,
+          saves,
+          shares,
+          song,
+          song_avatar_url,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .in('user_id', followingIds)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      const formattedClips: Zippclip[] = (data || []).map((clip: any) => ({
+        id: clip.id,
+        profiles: clip.profiles ? {
+          username: clip.profiles.username || 'unknown',
+          full_name: clip.profiles.full_name || 'Unknown User',
+          avatar_url: clip.profiles.avatar_url || null
+        } : null,
+        description: clip.description || '',
+        song: clip.song || 'Unknown Song',
+        likes: Number(clip.likes) || 0,
+        comments: Number(clip.comments) || 0,
+        saves: Number(clip.saves) || 0,
+        shares: Number(clip.shares) || 0,
+        media_url: clip.media_url,
+        media_type: clip.media_type || 'image',
+        song_avatar_url: clip.song_avatar_url || null,
+      }));
+
+      setZippclips(formattedClips);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      setFetchError(error);
+      console.error('Error fetching following zippclips:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch zippclips on mount
+  useEffect(() => {
+    fetchFollowingZippclips();
+  }, [fetchFollowingZippclips]);
+
+  // Get current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      if (!supabase) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setCurrentUser(session.user);
+        
+        // Get user profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserProfile(profile);
+      }
+    };
+
+    getCurrentUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-black flex items-center justify-center">
+        <LoadingOverlay />
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="h-screen bg-black flex items-center justify-center">
+        <div className="text-center text-white">
+          <p className="text-lg mb-4">Error loading content</p>
+          <p className="text-sm text-gray-400 mb-4">{fetchError.message}</p>
+          <Button 
+            onClick={fetchFollowingZippclips}
+            className="bg-teal-600 hover:bg-teal-700"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (zippclips.length === 0) {
+    return (
+      <div className="h-screen bg-black text-white">
+        <ZippersHeader />
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="mb-6">
+              <ZippLineLogo className="w-16 h-16 mx-auto mb-4" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">No Zippers Yet</h2>
+            <p className="text-gray-400 mb-6 max-w-sm">
+              Follow some users to see their content here. Discover amazing creators on the "For You" tab!
+            </p>
+            <Button 
+              asChild
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              <Link href="/home">
+                Discover Content
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen bg-black text-white overflow-hidden">
+      <ZippersHeader />
+      
+      <ErrorBoundary>
+        <Carousel
+          setApi={setApi}
+          orientation="vertical"
+          className="w-full h-full"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <CarouselContent className="h-full">
+            {zippclips.map((clip, index) => (
+              <CarouselItem key={clip.id} className="h-full">
+                <MediaPlayer 
+                  clip={clip} 
+                  isActive={index === current - 1}
+                />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
+      </ErrorBoundary>
+    </div>
+  );
+}

@@ -134,15 +134,13 @@ export default function ProfilePage() {
     
     // Add timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.log('Profile loading timeout reached');
-        setLoading(false);
-        setLoadingClips(false);
-      }
+      console.log('Profile loading timeout reached');
+      setLoading(false);
+      setLoadingClips(false);
     }, 10000); // 10 second timeout
     
     return () => clearTimeout(timeoutId);
-  }, [fetchProfileData, router, loading]);
+  }, [fetchProfileData, router]);
 
 
   const handleFeatureClick = (featureName: string) => {

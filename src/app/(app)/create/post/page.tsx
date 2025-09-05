@@ -217,6 +217,7 @@ export default function PostPage() {
         const filePath = `${user.id}/${fileName}`;
 
         // Upload file to Supabase Storage
+        console.log('Uploading to Supabase Storage...', { filePath, fileSize: blob.size });
         const { error: uploadError } = await supabase.storage
             .from('zippclips')
             .upload(filePath, blob, {
@@ -229,6 +230,7 @@ export default function PostPage() {
             throw new Error(`Storage Error: ${uploadError.message}`);
         }
 
+        console.log('Upload successful, getting public URL...');
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
             .from('zippclips')
@@ -238,7 +240,17 @@ export default function PostPage() {
             throw new Error('Could not get public URL for the uploaded file.');
         }
 
+        console.log('Public URL obtained:', publicUrl);
+
         // Insert into zippclips table
+        console.log('Inserting into database...', {
+            media_url: publicUrl,
+            media_type: media.type,
+            description: caption || '',
+            song: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : 'Original Sound',
+            song_avatar_url: selectedMusic ? selectedMusic.image : ''
+        });
+        
         const { error: insertError } = await supabase.from('zippclips').insert({
              media_url: publicUrl,
              media_type: media.type,
@@ -251,6 +263,8 @@ export default function PostPage() {
             console.error('Insert Error:', JSON.stringify(insertError, null, 2));
             throw new Error(`Database Error: ${insertError.message}`);
         }
+
+        console.log('Database insert successful!');
 
         const successMessage = zippReference 
           ? `Successfully joined @${zippReference.user}'s line!`

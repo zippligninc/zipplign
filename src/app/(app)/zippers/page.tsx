@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Bell, Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { Bell, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -9,13 +9,12 @@ import { cn } from '@/lib/utils';
 import { ZippLineLogo } from '@/components/common/zippline-logo';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { useTouchGestures, useHapticFeedback, useDeviceCapabilities } from '@/hooks/use-touch-gestures';
+import { useTouchGestures } from '@/hooks/use-touch-gestures';
 // Removed carousel imports - using CSS scroll snap instead
 import { VideoUIOverlay } from '@/components/home/video-ui-overlay';
 import { LazyMedia } from '@/components/optimized/lazy-media';
-import { ZippclipGridSkeleton, LoadingOverlay } from '@/components/ui/loading-states';
+import { LoadingOverlay } from '@/components/ui/loading-states';
 import { ErrorBoundary } from '@/components/error/error-boundary';
-import { PerformanceOptimizer } from '@/lib/performance';
 import { sampleZippclips } from '@/lib/sample-content';
 
 type Profile = {
@@ -252,7 +251,7 @@ export default function ZippersPage() {
   const [fetchError, setFetchError] = useState<Error | null>(null);
 
   // Touch gestures for scroll navigation
-  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchGestures({
+  const { onTouchStart, onTouchMove, onTouchEnd } = useTouchGestures({
     onSwipeUp: () => {
       if (current < zippclips.length - 1) {
         const scrollContainer = document.querySelector('.snap-y');
@@ -514,9 +513,9 @@ export default function ZippersPage() {
       <ErrorBoundary>
         <div 
           className="h-[calc(100vh-60px)] w-full overflow-y-auto snap-y snap-mandatory"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
           {zippclips.map((clip, index) => (
             <div key={clip.id} className="h-full w-full snap-start">

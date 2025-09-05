@@ -99,11 +99,20 @@ export default function PostPage() {
       const image = sessionStorage.getItem('capturedImage');
       const video = sessionStorage.getItem('capturedVideo');
 
+      console.log('Retrieved from sessionStorage:');
+      console.log('Image exists:', !!image);
+      console.log('Video exists:', !!video);
+      console.log('Image length:', image?.length || 0);
+      console.log('Video length:', video?.length || 0);
+
       if (image) {
+        console.log('Setting media as image');
         setMedia({ type: 'image', url: image });
       } else if (video) {
+        console.log('Setting media as video');
         setMedia({ type: 'video', url: video });
       } else {
+        console.log('No media found, redirecting...');
         // Redirect if no media is found after a short delay
         setTimeout(() => {
             if (!sessionStorage.getItem('capturedImage') && !sessionStorage.getItem('capturedVideo')) {
@@ -186,11 +195,17 @@ export default function PostPage() {
             throw new Error('No media to post. Please go back and select media.');
         }
 
+        console.log('Media type:', media.type);
+        console.log('Media URL length:', media.url.length);
+        
         const blob = dataURLtoBlob(media.url);
+        console.log('Blob created:', blob.type, blob.size);
         
         // Zipplign Core Feature: Validate video duration before upload
         if (media.type === 'video') {
+          console.log('Validating video duration...');
           const isValidDuration = await validateVideoDuration(blob);
+          console.log('Video duration valid:', isValidDuration);
           if (!isValidDuration) {
             setLoading(false);
             return;

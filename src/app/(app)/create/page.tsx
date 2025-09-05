@@ -381,13 +381,19 @@ export default function CreatePage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('File selected:', file.name, file.type, file.size);
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
+      console.log('Data URL created, length:', dataUrl.length);
+      
       if (file.type.startsWith('image/')) {
+        console.log('Storing as image');
         sessionStorage.setItem('capturedImage', dataUrl);
         sessionStorage.removeItem('capturedVideo');
       } else if (file.type.startsWith('video/')) {
+        console.log('Storing as video');
         sessionStorage.setItem('capturedVideo', dataUrl);
         sessionStorage.removeItem('capturedImage');
       } else {

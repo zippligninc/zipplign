@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, Package, Briefcase, Settings, Eye, EyeOff, Edit, Trash2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { LogoMedium } from '@/components/common/logo';
+import { LogoMedium, LogoLarge } from '@/components/common/logo';
 
 interface Store {
   id: string;

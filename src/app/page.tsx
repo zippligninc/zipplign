@@ -30,7 +30,7 @@ export default function WelcomePage() {
                     alt="User avatar"
                     width={100}
                     height={100}
-                    className="absolute rounded-full object-cover blur-sm opacity-50 aspect-square"
+                    className="absolute rounded-full object-cover opacity-50 aspect-square"
                     style={{ top: avatar.top, left: avatar.left, width: avatar.size, height: avatar.size }}
                 />
             ))}

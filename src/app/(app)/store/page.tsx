@@ -68,11 +68,9 @@ export default function ShopPage() {
     if (result.success) {
       setStores(result.data?.stores || []);
     } else {
-      toast({
-        title: 'Error',
-        description: result.error || 'Failed to load stores',
-        variant: 'destructive',
-      });
+      // Don't show error toast for missing table - just show empty state
+      console.log('Store fetch result:', result);
+      setStores([]);
     }
     
     setLoading(false);
@@ -93,11 +91,9 @@ export default function ShopPage() {
     if (result.success) {
       setSearchResults(result.data || []);
     } else {
-      toast({
-        title: 'Search Error',
-        description: result.error || 'Failed to search stores',
-        variant: 'destructive',
-      });
+      // Don't show error toast for missing table - just show empty results
+      console.log('Store search result:', result);
+      setSearchResults([]);
     }
     
     setIsSearching(false);

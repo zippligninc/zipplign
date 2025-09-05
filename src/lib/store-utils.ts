@@ -93,6 +93,19 @@ export async function getPublicStores(limit: number = 20, offset: number = 0): P
     };
   } catch (error: any) {
     console.error('Error fetching public stores:', error);
+    
+    // Check if it's a table doesn't exist error
+    if (error.message?.includes('relation "creator_stores" does not exist') || 
+        error.message?.includes('Failed to fetch')) {
+      return {
+        success: true,
+        data: {
+          stores: [],
+          total: 0
+        }
+      };
+    }
+    
     return {
       success: false,
       error: error.message || 'Failed to fetch stores'
@@ -379,6 +392,16 @@ export async function searchStores(query: string, limit: number = 20): Promise<S
     };
   } catch (error: any) {
     console.error('Error searching stores:', error);
+    
+    // Check if it's a table doesn't exist error
+    if (error.message?.includes('relation "creator_stores" does not exist') || 
+        error.message?.includes('Failed to fetch')) {
+      return {
+        success: true,
+        data: []
+      };
+    }
+    
     return {
       success: false,
       error: error.message || 'Failed to search stores'

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, Search, MessageSquare, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ZppIcon } from '../icons/zpp-icon';
+import { LogoCreateButton } from './logo';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 const navItems = [
   { href: '/home', icon: Home, label: 'Home' },
   { href: '/discover', icon: Search, label: 'Discover' },
-  { href: '/create', icon: ZppIcon, label: 'Create', isCreate: true },
+  { href: '/create', icon: LogoCreateButton, label: 'Create', isCreate: true },
   { href: '/inbox', icon: MessageSquare, label: 'Inbox' },
   { href: '/profile', icon: User, label: 'Profile' },
 ];

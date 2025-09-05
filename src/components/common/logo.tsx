@@ -39,3 +39,17 @@ export function LogoLarge({ className }: { className?: string }) {
 export function LogoXLarge({ className }: { className?: string }) {
   return <Logo className={className} width={80} height={80} />;
 }
+
+// Special version for the create button with circular background optimization
+export function LogoCreateButton({ className }: { className?: string }) {
+  return (
+    <Image
+      src="/Images/logo.png"
+      alt="Zipplign Logo"
+      width={28}
+      height={28}
+      className={cn("object-contain rounded-full", className)}
+      priority
+    />
+  );
+}

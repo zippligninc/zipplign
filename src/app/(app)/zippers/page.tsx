@@ -10,17 +10,13 @@ import { ZippLineLogo } from '@/components/common/zippline-logo';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useTouchGestures, useHapticFeedback, useDeviceCapabilities } from '@/hooks/use-touch-gestures';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from '@/components/ui/carousel';
+// Removed carousel imports - using CSS scroll snap instead
 import { VideoUIOverlay } from '@/components/home/video-ui-overlay';
 import { LazyMedia } from '@/components/optimized/lazy-media';
 import { ZippclipGridSkeleton, LoadingOverlay } from '@/components/ui/loading-states';
 import { ErrorBoundary } from '@/components/error/error-boundary';
 import { PerformanceOptimizer } from '@/lib/performance';
+import { sampleZippclips } from '@/lib/sample-content';
 
 type Profile = {
   username: string;
@@ -141,14 +137,14 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
 
   return (
     <div 
-      className="relative w-full h-full bg-black"
+      className="relative w-full h-full bg-black flex items-center justify-center"
       onTouchStart={handleTouchStart}
       onClick={handleTouchStart}
     >
       {clip.media_type === 'video' ? (
         <video
           ref={videoRef}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           loop
           muted={isMuted}
           playsInline
@@ -160,7 +156,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         <LazyMedia
           src={clip.media_url}
           alt={clip.description}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
         />
       )}
 
@@ -200,6 +196,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
 
       {/* Video UI Overlay */}
       <VideoUIOverlay
+        id={clip.id}
         user={user}
         description={clip.description}
         song={clip.song}
@@ -249,41 +246,59 @@ export default function ZippersPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
-  const [api, setApi] = React.useState<CarouselApi>()
   const [current, setCurrent] = React.useState(0)
-  const [count, setCount] = React.useState(0)
   const [zippclips, setZippclips] = useState<Zippclip[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<Error | null>(null);
 
-  // Touch gestures
+  // Touch gestures for scroll navigation
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchGestures({
     onSwipeUp: () => {
-      if (api && current < count - 1) {
-        api.scrollNext();
+      if (current < zippclips.length - 1) {
+        const scrollContainer = document.querySelector('.snap-y');
+        if (scrollContainer) {
+          const itemHeight = window.innerHeight - 60;
+          scrollContainer.scrollTo({
+            top: (current + 1) * itemHeight,
+            behavior: 'smooth'
+          });
+        }
       }
     },
     onSwipeDown: () => {
-      if (api && current > 0) {
-        api.scrollPrev();
+      if (current > 0) {
+        const scrollContainer = document.querySelector('.snap-y');
+        if (scrollContainer) {
+          const itemHeight = window.innerHeight - 60;
+          scrollContainer.scrollTo({
+            top: (current - 1) * itemHeight,
+            behavior: 'smooth'
+          });
+        }
       }
     },
   });
 
+  // Track current video index for scroll snap
   React.useEffect(() => {
-    if (!api) {
-      return
+    const handleScroll = () => {
+      const scrollContainer = document.querySelector('.snap-y');
+      if (scrollContainer) {
+        const scrollTop = scrollContainer.scrollTop;
+        const itemHeight = window.innerHeight - 60; // Account for header
+        const currentIndex = Math.round(scrollTop / itemHeight);
+        setCurrent(currentIndex);
+      }
+    };
+
+    const scrollContainer = document.querySelector('.snap-y');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
     }
+  }, [zippclips.length]);
 
-    setCount(api.scrollSnapList().length)
-    setCurrent(api.selectedScrollSnap() + 1)
-
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap() + 1)
-    })
-  }, [api])
-
-  const fetchFollowingZippclips = React.useCallback(async () => {
+  const fetchFollowingZippclips = async () => {
     if (!supabase) {
       setFetchError(new Error('Database connection not available'));
       setLoading(false);
@@ -297,9 +312,12 @@ export default function ZippersPage() {
       // First get the current user
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
+        console.log('No user session found');
         setLoading(false);
         return;
       }
+
+      console.log('Fetching zippclips for user:', session.user.id);
 
       // Get users that the current user follows
       const { data: followingData, error: followingError } = await supabase
@@ -307,16 +325,23 @@ export default function ZippersPage() {
         .select('following_id')
         .eq('follower_id', session.user.id);
 
-      if (followingError) throw followingError;
+      if (followingError) {
+        console.error('Error fetching follows:', followingError);
+        throw followingError;
+      }
 
-      // If user follows no one, show empty state
+      console.log('Following data:', followingData);
+
+      // If user follows no one, show sample content for demo
       if (!followingData || followingData.length === 0) {
-        setZippclips([]);
+        console.log('User follows no one, showing sample content');
+        setZippclips(sampleZippclips.slice(0, 5)); // Show first 5 sample clips
         setLoading(false);
         return;
       }
 
       const followingIds = followingData.map(f => f.following_id);
+      console.log('Following IDs:', followingIds);
 
       // Get zippclips from followed users
       const { data, error } = await supabase
@@ -342,7 +367,20 @@ export default function ZippersPage() {
         .order('created_at', { ascending: false })
         .limit(20);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching zippclips:', error);
+        throw error;
+      }
+
+      console.log('Fetched zippclips:', data);
+
+      // If no zippclips from followed users, show sample content
+      if (!data || data.length === 0) {
+        console.log('No zippclips from followed users, showing sample content');
+        setZippclips(sampleZippclips.slice(0, 5));
+        setLoading(false);
+        return;
+      }
 
       const formattedClips: Zippclip[] = (data || []).map((clip: any) => ({
         id: clip.id,
@@ -370,12 +408,29 @@ export default function ZippersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   // Fetch zippclips on mount
   useEffect(() => {
-    fetchFollowingZippclips();
-  }, [fetchFollowingZippclips]);
+    console.log('Zippers page mounted, starting data fetch');
+    
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log('Loading timeout reached, showing sample content');
+        setZippclips(sampleZippclips.slice(0, 5));
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
+    // Try to fetch data, but fallback to sample content
+    fetchFollowingZippclips().catch((error) => {
+      console.error('Error in fetchFollowingZippclips:', error);
+      setZippclips(sampleZippclips.slice(0, 5));
+      setLoading(false);
+    });
+
+    return () => clearTimeout(timeoutId);
+  }, []); // Remove dependencies to prevent infinite re-renders
 
   // Get current user
   useEffect(() => {
@@ -434,9 +489,9 @@ export default function ZippersPage() {
             <div className="mb-6">
               <ZippLineLogo className="w-16 h-16 mx-auto mb-4" />
             </div>
-            <h2 className="text-xl font-semibold mb-2">No Zippers Yet</h2>
+            <h2 className="text-xl font-semibold mb-2">Welcome to Zippers!</h2>
             <p className="text-gray-400 mb-6 max-w-sm">
-              Follow some users to see their content here. Discover amazing creators on the "For You" tab!
+              This is where you'll see content from users you follow. Start by following some creators on the "For You" tab!
             </p>
             <Button 
               asChild
@@ -457,25 +512,21 @@ export default function ZippersPage() {
       <ZippersHeader />
       
       <ErrorBoundary>
-        <Carousel
-          setApi={setApi}
-          orientation="vertical"
-          className="w-full h-full"
+        <div 
+          className="h-[calc(100vh-60px)] w-full overflow-y-auto snap-y snap-mandatory"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <CarouselContent className="h-full">
-            {zippclips.map((clip, index) => (
-              <CarouselItem key={clip.id} className="h-full">
-                <MediaPlayer 
-                  clip={clip} 
-                  isActive={index === current - 1}
-                />
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+          {zippclips.map((clip, index) => (
+            <div key={clip.id} className="h-full w-full snap-start">
+              <MediaPlayer 
+                clip={clip} 
+                isActive={index === current}
+              />
+            </div>
+          ))}
+        </div>
       </ErrorBoundary>
     </div>
   );

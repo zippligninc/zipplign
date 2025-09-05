@@ -158,7 +158,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
             loop
             muted={isMuted}
             playsInline
-            className="absolute inset-0 w-full h-full object-cover object-center"
+            className="absolute inset-0 w-full h-full object-contain"
             onError={handleVideoError}
             {...touchGestures}
           />
@@ -189,7 +189,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         </>
       ) : (
         <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          className="absolute inset-0 w-full h-full bg-contain bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${clip.media_url})` }}
           {...touchGestures}
         />

@@ -17,7 +17,7 @@ export function Logo({ className, width = 40, height = 40, alt = "Zipplign Logo"
       alt={alt}
       width={width}
       height={height}
-      className={cn("object-contain", className)}
+      className={cn("object-contain rounded-lg", className)}
       priority
     />
   );

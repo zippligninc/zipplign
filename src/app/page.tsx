@@ -47,7 +47,7 @@ export default function WelcomePage() {
             
             <div className="relative z-10 flex h-full w-full flex-col items-center justify-between p-8">
                 <div className="flex flex-col items-center text-center pt-20">
-                    <LogoLarge className="h-12 w-12 rounded-lg" />
+                    <LogoLarge className="h-12 w-12" />
                     <h1 className="mt-2 text-2xl font-bold tracking-tight">Zipplign</h1>
                 </div>
 

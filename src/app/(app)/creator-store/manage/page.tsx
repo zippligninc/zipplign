@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, Package, Briefcase, Settings, Eye, EyeOff, Edit, Trash2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { ZippLineLogo } from '@/components/common/zippline-logo';
+import { LogoMedium } from '@/components/common/logo';
 
 interface Store {
   id: string;
@@ -311,7 +311,7 @@ export default function CreatorStoreManagePage() {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
-          <ZippLineLogo className="h-12 w-12 mx-auto mb-4 animate-pulse" />
+          <LogoLarge className="h-12 w-12 mx-auto mb-4 animate-pulse" />
           <p>Loading your store...</p>
         </div>
       </div>
@@ -322,7 +322,7 @@ export default function CreatorStoreManagePage() {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
-          <ZippLineLogo className="h-12 w-12 mx-auto mb-4" />
+          <LogoLarge className="h-12 w-12 mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2">No Store Found</h2>
           <p className="text-gray-400 mb-4">You need to create a store first.</p>
           <Button onClick={() => router.push('/creator-store/setup')}>
@@ -348,7 +348,7 @@ export default function CreatorStoreManagePage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <ZippLineLogo className="h-6 w-6" />
+              <LogoMedium className="h-6 w-6" />
               <h1 className="text-lg font-semibold">{store.business_name}</h1>
             </div>
           </div>

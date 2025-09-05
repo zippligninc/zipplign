@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Store, User, Building, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { ZippLineLogo } from '@/components/common/zippline-logo';
+import { LogoMedium } from '@/components/common/logo';
 
 export default function CreatorStoreSetupPage() {
   const router = useRouter();
@@ -155,7 +155,7 @@ export default function CreatorStoreSetupPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <ZippLineLogo className="h-6 w-6" />
+              <LogoMedium className="h-6 w-6" />
               <h1 className="text-lg font-semibold">Creator Store Setup</h1>
             </div>
           </div>

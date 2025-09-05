@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Bell, Calendar, MapPin, Clock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ZippLineLogo } from '@/components/common/zippline-logo';
+import { LogoLarge } from '@/components/common/logo';
 
 const navItems = [
     { href: '/events', label: 'Events' },
@@ -54,7 +54,7 @@ export default function EventsPage() {
       <div className="h-full pt-16 pb-24 flex flex-col items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="mb-8">
-            <ZippLineLogo className="w-20 h-20 mx-auto mb-6" />
+            <LogoLarge className="w-20 h-20 mx-auto mb-6" />
             <Calendar className="w-16 h-16 mx-auto text-teal-400 mb-4" />
           </div>
           

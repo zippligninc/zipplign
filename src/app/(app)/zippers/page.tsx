@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { ZippLineLogo } from '@/components/common/zippline-logo';
+import { LogoLarge } from '@/components/common/logo';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useTouchGestures, useHapticFeedback, useDeviceCapabilities } from '@/hooks/use-touch-gestures';
@@ -492,7 +492,7 @@ export default function ZippersPage() {
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <div className="mb-6">
-              <ZippLineLogo className="w-16 h-16 mx-auto mb-4" />
+              <LogoLarge className="w-16 h-16 mx-auto mb-4" />
             </div>
             <h2 className="text-xl font-semibold mb-2">Welcome to Zippers!</h2>
             <p className="text-gray-400 mb-6 max-w-sm">

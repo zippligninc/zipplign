@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { ZippLineLogo } from '@/components/common/zippline-logo';
+import { LogoXLarge } from '@/components/common/logo';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useTouchGestures, useHapticFeedback, useDeviceCapabilities } from '@/hooks/use-touch-gestures';
@@ -462,7 +462,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="flex h-screen w-full flex-col items-center justify-center bg-black text-white">
-              <ZippLineLogo className="h-20 w-20 mb-4 text-primary" />
+              <LogoXLarge className="h-20 w-20 mb-4" />
               <h2 className="text-xl font-bold mb-2">No Zippclips Yet</h2>
               <p className="text-muted-foreground mb-6 text-center text-sm max-w-md">
                 Be the first to share your amazing moments! Create and post your first video to see content here.

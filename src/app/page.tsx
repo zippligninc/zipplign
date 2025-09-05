@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ZipplignLogo } from '@/components/common/zipplign-logo';
+import { LogoLarge } from '@/components/common/logo';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -47,7 +47,7 @@ export default function WelcomePage() {
             
             <div className="relative z-10 flex h-full w-full flex-col items-center justify-between p-8">
                 <div className="flex flex-col items-center text-center pt-20">
-                    <ZipplignLogo className="h-12 w-12" />
+                    <LogoLarge className="h-12 w-12 rounded-lg" />
                     <h1 className="mt-2 text-2xl font-bold tracking-tight">Zipplign</h1>
                 </div>
 

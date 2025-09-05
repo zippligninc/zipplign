@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, MessageSquare, User } from 'lucide-react';
+import { Home, Search, ShoppingBag, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LogoCreateButton } from './logo';
 import { useState, useEffect } from 'react';
@@ -11,10 +11,10 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
-  { href: '/home', icon: Home, label: 'Home' },
-  { href: '/discover', icon: Search, label: 'Discover' },
+  { href: '/home', icon: Home, label: 'For You' },
+  { href: '/zippers', icon: Search, label: 'Zippers' },
   { href: '/create', icon: LogoCreateButton, label: 'Create', isCreate: true },
-  { href: '/inbox', icon: MessageSquare, label: 'Inbox' },
+  { href: '/store', icon: ShoppingBag, label: 'Store' },
   { href: '/profile', icon: User, label: 'Profile' },
 ];
 
@@ -72,7 +72,7 @@ export function BottomNav() {
           let href = item.href;
           const isActive = pathname === href;
 
-          const isProtected = item.isCreate || item.href === '/inbox' || item.href === '/profile';
+          const isProtected = item.isCreate || item.href === '/store' || item.href === '/profile';
 
           return (
             <Link

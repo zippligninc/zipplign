@@ -43,13 +43,6 @@ export default function ProfilePage() {
 
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Function to refresh profile data
-  const refreshProfileData = useCallback(async () => {
-    if (user) {
-      await fetchProfileData(user);
-    }
-  }, [user, fetchProfileData]);
-
   const fetchProfileData = useCallback(async (user: User) => {
     try {
       console.log('Fetching profile data for user:', user.id);
@@ -165,6 +158,13 @@ export default function ProfilePage() {
       setLoadingClips(false);
     }
   }, [toast]);
+
+  // Function to refresh profile data
+  const refreshProfileData = useCallback(async () => {
+    if (user) {
+      await fetchProfileData(user);
+    }
+  }, [user, fetchProfileData]);
   
   useEffect(() => {
     const checkUser = async () => {

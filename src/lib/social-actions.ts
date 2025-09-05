@@ -281,6 +281,7 @@ export async function checkIsLiked(zippclipId: string): Promise<SocialActionResp
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
+      // User not authenticated - this is normal, just return not liked
       return { success: true, data: { liked: false } };
     }
 
@@ -292,13 +293,14 @@ export async function checkIsLiked(zippclipId: string): Promise<SocialActionResp
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      throw error;
+      // Database error - return not liked instead of throwing
+      return { success: true, data: { liked: false } };
     }
 
     return { success: true, data: { liked: !!like } };
   } catch (error: any) {
-    console.error('Error checking like status:', error);
-    return { success: false, error: error.message };
+    // Any other error - return not liked instead of throwing
+    return { success: true, data: { liked: false } };
   }
 }
 

@@ -160,21 +160,39 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
       onClick={handleTouchStart}
     >
       {clip.media_type === 'video' ? (
-        <video
-          ref={videoRef}
-          className="w-full h-full object-contain"
-          loop
-          muted={isMuted}
-          playsInline
-          onError={handleVideoError}
-        >
-          <source src={clip.media_url} type="video/mp4" />
-        </video>
+        <div className="relative w-full h-full">
+          <video
+            ref={videoRef}
+            className="w-full h-full object-contain"
+            loop
+            muted={isMuted}
+            playsInline
+            onError={handleVideoError}
+          >
+            <source src={clip.media_url} type="video/mp4" />
+          </video>
+          
+          {/* Mute Button - Layered directly on video */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/80 hover:bg-black/90 z-50 border border-white/20"
+            onClick={toggleMute}
+          >
+            {isMuted ? (
+              <VolumeX className="h-4 w-4 text-white" />
+            ) : (
+              <Volume2 className="h-4 w-4 text-white" />
+            )}
+          </Button>
+        </div>
       ) : (
         <LazyMedia
           src={clip.media_url}
           alt={clip.description}
           type="image"
+          width={400}
+          height={600}
           className="w-full h-full object-contain"
         />
       )}
@@ -197,21 +215,6 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         </div>
       )}
 
-      {/* Mute Button */}
-      {clip.media_type === 'video' && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70"
-          onClick={toggleMute}
-        >
-          {isMuted ? (
-            <VolumeX className="h-4 w-4 text-white" />
-          ) : (
-            <Volume2 className="h-4 w-4 text-white" />
-          )}
-        </Button>
-      )}
       
       <VideoUIOverlay
         id={clip.id}

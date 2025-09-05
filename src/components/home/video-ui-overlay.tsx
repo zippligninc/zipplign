@@ -68,18 +68,34 @@ export function VideoUIOverlay({
   // Check if user has liked this post and if user is blocked
   useEffect(() => {
     const checkStatus = async () => {
-      if (id) {
-        const likeResult = await checkIsLiked(id);
-        if (likeResult.success) {
-          setIsLiked(likeResult.data.liked);
+      try {
+        // Only check like status if we have a valid user session
+        if (id && supabase) {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (currentUser) {
+            const likeResult = await checkIsLiked(id);
+            if (likeResult.success) {
+              setIsLiked(likeResult.data.liked);
+            }
+          } else {
+            // No user - set not liked
+            setIsLiked(false);
+          }
+        } else {
+          // No supabase or id - set not liked
+          setIsLiked(false);
         }
-      }
-      
-      if (user?.id) {
-        const blockResult = await checkIfBlocked(user.id);
-        if (blockResult.success && blockResult.data) {
-          setIsUserBlocked(blockResult.data.blocked);
+        
+        if (user?.id) {
+          const blockResult = await checkIfBlocked(user.id);
+          if (blockResult.success && blockResult.data) {
+            setIsUserBlocked(blockResult.data.blocked);
+          }
         }
+      } catch (error) {
+        // Silently handle errors - set default states
+        setIsLiked(false);
+        setIsUserBlocked(false);
       }
     };
     

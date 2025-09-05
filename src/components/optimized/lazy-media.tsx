@@ -94,7 +94,8 @@ export function LazyMedia({
               height={height}
               className={cn(
                 'transition-opacity duration-300',
-                isLoaded ? 'opacity-100' : 'opacity-0'
+                isLoaded ? 'opacity-100' : 'opacity-0',
+                className
               )}
               onLoad={handleLoad}
               onError={handleError}
@@ -105,7 +106,8 @@ export function LazyMedia({
               src={src}
               className={cn(
                 'w-full h-full object-cover transition-opacity duration-300',
-                isLoaded ? 'opacity-100' : 'opacity-0'
+                isLoaded ? 'opacity-100' : 'opacity-0',
+                className
               )}
               muted
               playsInline

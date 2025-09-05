@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { toggleLike, checkIsLiked } from '@/lib/social-actions';
 import { blockUser, checkIfBlocked } from '@/lib/moderation';
+import { incrementZippclipViews, getZippclipViews, formatViewCount } from '@/lib/view-tracking';
 import { CommentsModal } from './comments-modal';
 import { ReportModal } from '../moderation/report-modal';
 import {
@@ -64,8 +65,11 @@ export function VideoUIOverlay({
   const [commentCount, setCommentCount] = useState(parseInt(comments.toString()) || 0);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isUserBlocked, setIsUserBlocked] = useState(false);
+  const [viewCount, setViewCount] = useState(0);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [hasTrackedView, setHasTrackedView] = useState(false);
 
-  // Check if user has liked this post and if user is blocked
+  // Check if user has liked this post, if user is blocked, fetch view count and follower count
   useEffect(() => {
     const checkStatus = async () => {
       try {
@@ -101,6 +105,30 @@ export function VideoUIOverlay({
         } else {
           setIsUserBlocked(false);
         }
+
+        // Fetch current view count
+        if (id) {
+          const viewResult = await getZippclipViews(id);
+          if (viewResult.success && viewResult.data) {
+            setViewCount(viewResult.data.views);
+          }
+        }
+
+        // Fetch follower count for the user
+        if (user?.id && supabase) {
+          try {
+            const { data, error } = await supabase
+              .from('follows')
+              .select('id', { count: 'exact' })
+              .eq('following_id', user.id);
+            
+            if (!error && data !== null) {
+              setFollowerCount(data.length || 0);
+            }
+          } catch (error) {
+            console.error('Error fetching follower count:', error);
+          }
+        }
       } catch (error) {
         // Silently handle errors - set default states
         setIsLiked(false);
@@ -110,6 +138,27 @@ export function VideoUIOverlay({
     
     checkStatus();
   }, [id, user?.id]);
+
+  // Track view when component mounts (only once per session)
+  useEffect(() => {
+    const trackView = async () => {
+      if (id && !hasTrackedView) {
+        try {
+          const result = await incrementZippclipViews(id);
+          if (result.success && result.data) {
+            setViewCount(result.data.views);
+            setHasTrackedView(true);
+          }
+        } catch (error) {
+          console.error('Error tracking view:', error);
+        }
+      }
+    };
+
+    // Track view after a short delay to ensure the video is actually being viewed
+    const timer = setTimeout(trackView, 2000);
+    return () => clearTimeout(timer);
+  }, [id, hasTrackedView]);
 
   const handleLike = async () => {
     if (!supabase) {
@@ -296,6 +345,14 @@ export function VideoUIOverlay({
             />
           )}
         </div>
+        {/* Follower Count Display */}
+        <div className="mt-2 text-center">
+          <div className="bg-black/80 rounded-lg px-2 py-1 border border-white/30">
+            <p className="text-white text-xs font-bold">
+              {formatViewCount(followerCount)} Zippers
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Main Overlay - Bottom */}
@@ -332,6 +389,14 @@ export function VideoUIOverlay({
         <div className="flex items-center gap-2">
           <Music className="h-3 w-3" />
           <p className="text-xs font-medium truncate">{song}</p>
+        </div>
+        
+        {/* View Count Display */}
+        <div className="flex items-center gap-1">
+          <div className="w-1 h-1 bg-white rounded-full"></div>
+          <p className="text-xs text-white/80 font-medium">
+            {formatViewCount(viewCount)} views
+          </p>
         </div>
       </div>
 

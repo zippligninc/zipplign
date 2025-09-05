@@ -103,8 +103,8 @@ export function BottomNav() {
               )}
             >
               {item.isCreate ? (
-                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-background text-white shadow-md ring-1 ring-teal-600 transition-transform hover:scale-105">
-                    <item.icon className="h-5 w-5 text-primary" />
+                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex h-16 w-16 items-center justify-center rounded-full bg-background text-white shadow-lg ring-2 ring-teal-600 transition-transform hover:scale-105">
+                    <item.icon className="h-7 w-7 text-primary" />
                  </div>
               ) : (
                 <item.icon className="h-4 w-4" fill={isActive ? 'white' : 'none'} />

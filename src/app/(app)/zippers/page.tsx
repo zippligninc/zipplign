@@ -260,7 +260,7 @@ export default function ZippersPage() {
       if (current < zippclips.length - 1) {
         const scrollContainer = document.querySelector('.snap-y');
         if (scrollContainer) {
-          const itemHeight = window.innerHeight - 80;
+          const itemHeight = window.innerHeight - 96;
           scrollContainer.scrollTo({
             top: (current + 1) * itemHeight,
             behavior: 'smooth'
@@ -272,7 +272,7 @@ export default function ZippersPage() {
       if (current > 0) {
         const scrollContainer = document.querySelector('.snap-y');
         if (scrollContainer) {
-          const itemHeight = window.innerHeight - 80;
+          const itemHeight = window.innerHeight - 96;
           scrollContainer.scrollTo({
             top: (current - 1) * itemHeight,
             behavior: 'smooth'
@@ -288,7 +288,7 @@ export default function ZippersPage() {
       const scrollContainer = document.querySelector('.snap-y');
       if (scrollContainer) {
         const scrollTop = scrollContainer.scrollTop;
-        const itemHeight = window.innerHeight - 80; // Account for header and bottom nav
+        const itemHeight = window.innerHeight - 96; // Account for header, bottom nav, and larger create button
         const currentIndex = Math.round(scrollTop / itemHeight);
         setCurrent(currentIndex);
       }
@@ -516,7 +516,7 @@ export default function ZippersPage() {
       
       <ErrorBoundary>
         <div 
-          className="h-[calc(100vh-80px)] w-full overflow-y-auto snap-y snap-mandatory"
+          className="h-[calc(100vh-96px)] w-full overflow-y-auto snap-y snap-mandatory"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}

@@ -67,7 +67,7 @@ export function BottomNav() {
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-t-emerald-800 bg-gradient-to-r from-green-600 to-teal-600/90 backdrop-blur-sm">
-      <nav className="flex h-10 items-center justify-around px-1">
+      <nav className="flex h-16 items-center justify-around px-1">
         {navItems.map((item) => {
           let href = item.href;
           const isActive = pathname === href;
@@ -103,7 +103,7 @@ export function BottomNav() {
               )}
             >
               {item.isCreate ? (
-                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-background text-white shadow-md ring-1 ring-teal-600 transition-transform hover:scale-105">
+                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-background text-white shadow-md ring-1 ring-teal-600 transition-transform hover:scale-105">
                     <item.icon className="h-5 w-5 text-primary" />
                  </div>
               ) : (

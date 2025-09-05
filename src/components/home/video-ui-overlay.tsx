@@ -51,6 +51,8 @@ export function VideoUIOverlay({
   comments,
   saves,
   shares,
+  media_url,
+  media_type,
   song_avatar_url,
 }: VideoUIOverlayProps) {
   const router = useRouter();
@@ -246,7 +248,33 @@ export function VideoUIOverlay({
 
 
   return (
-    <div className="absolute bottom-12 left-0 right-0 flex items-end justify-between p-4 pb-4 text-white z-10">
+    <>
+      {/* Picture-in-Picture Window - Top Left */}
+      <div className="fixed top-16 left-4 z-50">
+        <div className="w-20 h-28 bg-black/80 rounded-lg overflow-hidden border-2 border-white/30 shadow-lg">
+          {media_type === 'video' ? (
+            <video
+              src={media_url}
+              className="w-full h-full object-cover"
+              muted
+              loop
+              autoPlay
+              playsInline
+            />
+          ) : (
+            <Image
+              src={media_url}
+              alt="Preview"
+              width={80}
+              height={112}
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Main Overlay - Bottom */}
+      <div className="absolute bottom-12 left-0 right-0 flex items-end justify-between p-4 pb-4 text-white z-10">
       {/* Left Side - User Info and Content */}
       <div className="flex-1 max-w-[80%] space-y-2">
         <div className="flex items-center gap-2">
@@ -386,7 +414,8 @@ export function VideoUIOverlay({
         contentId={id}
         contentDescription={description}
       />
-    </div>
+      </div>
+    </>
   );
 }
 

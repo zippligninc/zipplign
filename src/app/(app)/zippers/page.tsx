@@ -155,6 +155,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         <LazyMedia
           src={clip.media_url}
           alt={clip.description}
+          type="image"
           className="w-full h-full object-contain"
         />
       )}

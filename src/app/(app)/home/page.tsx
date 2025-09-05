@@ -114,6 +114,11 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
     }
   };
 
+  const handleTouchStart = () => {
+    setShowControls(true);
+    setTimeout(() => setShowControls(false), 3000);
+  };
+
   const toggleControls = () => {
     if (clip.media_type === 'video') {
       setShowControls(!showControls);
@@ -149,50 +154,63 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
   });
 
   return (
-    <div className="relative h-full w-full bg-black flex items-center justify-center">
+    <div 
+      className="relative h-full w-full bg-black flex items-center justify-center"
+      onTouchStart={handleTouchStart}
+      onClick={handleTouchStart}
+    >
       {clip.media_type === 'video' ? (
-        <>
-          <video
-            ref={videoRef}
-            src={clip.media_url}
-            loop
-            muted={isMuted}
-            playsInline
-            className="absolute inset-0 w-full h-full object-contain"
-            onError={handleVideoError}
-            {...touchGestures}
-          />
-          {showControls && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <div className="flex items-center gap-6">
-                <button
-                  className="h-16 w-16 bg-black/60 text-white hover:bg-black/80 rounded-full flex items-center justify-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    togglePlay();
-                  }}
-                >
-                  {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
-                </button>
-                <button
-                  className="h-16 w-16 bg-black/60 text-white hover:bg-black/80 rounded-full flex items-center justify-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleMute();
-                  }}
-                >
-                  {isMuted ? <VolumeX className="h-8 w-8" /> : <Volume2 className="h-8 w-8" />}
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+        <video
+          ref={videoRef}
+          className="w-full h-full object-contain"
+          loop
+          muted={isMuted}
+          playsInline
+          onError={handleVideoError}
+        >
+          <source src={clip.media_url} type="video/mp4" />
+        </video>
       ) : (
-        <div 
-          className="absolute inset-0 w-full h-full bg-contain bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${clip.media_url})` }}
-          {...touchGestures}
+        <LazyMedia
+          src={clip.media_url}
+          alt={clip.description}
+          type="image"
+          className="w-full h-full object-contain"
         />
+      )}
+
+      {/* Video Controls Overlay */}
+      {clip.media_type === 'video' && showControls && (
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+          <Button
+            variant="ghost"
+            size="lg"
+            className="h-16 w-16 rounded-full bg-black/50 hover:bg-black/70"
+            onClick={togglePlay}
+          >
+            {isPlaying ? (
+              <Pause className="h-8 w-8 text-white" />
+            ) : (
+              <Play className="h-8 w-8 text-white" />
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Mute Button */}
+      {clip.media_type === 'video' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70"
+          onClick={toggleMute}
+        >
+          {isMuted ? (
+            <VolumeX className="h-4 w-4 text-white" />
+          ) : (
+            <Volume2 className="h-4 w-4 text-white" />
+          )}
+        </Button>
       )}
       
       <VideoUIOverlay

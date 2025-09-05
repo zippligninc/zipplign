@@ -41,6 +41,7 @@ const navItems = [
     { href: '/home', label: 'For You' },
     { href: '/zippers', label: 'Zippers' },
     { href: '/live', label: 'Live' },
+    { href: '/shop', label: 'Shop' },
 ];
 
 const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) => {

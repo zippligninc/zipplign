@@ -87,10 +87,19 @@ export function VideoUIOverlay({
         }
         
         if (user?.id) {
-          const blockResult = await checkIfBlocked(user.id);
-          if (blockResult.success && blockResult.data) {
-            setIsUserBlocked(blockResult.data.blocked);
+          try {
+            const blockResult = await checkIfBlocked(user.id);
+            if (blockResult.success && blockResult.data) {
+              setIsUserBlocked(blockResult.data.blocked);
+            } else {
+              setIsUserBlocked(false);
+            }
+          } catch (error) {
+            // Silently handle block check errors
+            setIsUserBlocked(false);
           }
+        } else {
+          setIsUserBlocked(false);
         }
       } catch (error) {
         // Silently handle errors - set default states

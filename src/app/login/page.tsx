@@ -22,6 +22,10 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [showOTP, setShowOTP] = useState(false);
+  const [phoneLoading, setPhoneLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +105,66 @@ export default function LoginPage() {
     setResetLoading(false);
   };
 
+  const handlePhoneLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    if (!phoneNumber.trim()) {
+      toast({
+        title: 'Phone Number Required',
+        description: 'Please enter your phone number.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setPhoneLoading(true);
+
+    try {
+      if (!showOTP) {
+        // Send OTP
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: phoneNumber,
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        setShowOTP(true);
+        toast({
+          title: 'Code Sent',
+          description: 'Verification code sent to your phone!',
+        });
+      } else {
+        // Verify OTP
+        const { error } = await supabase.auth.verifyOtp({
+          phone: phoneNumber,
+          token: otpCode,
+          type: 'sms',
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        toast({
+          title: 'Login Successful',
+          description: 'Welcome back!',
+        });
+        router.push('/home');
+      }
+    } catch (error: any) {
+      console.error('Phone login error:', error);
+      toast({
+        title: 'Login Error',
+        description: error.message || 'Failed to login with phone number.',
+        variant: 'destructive',
+      });
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
       <header className="flex items-center justify-between p-4">
@@ -162,16 +226,46 @@ export default function LoginPage() {
                 </form>
             </TabsContent>
             <TabsContent value="phone">
-                 <div className="mt-8 space-y-4">
+                <form onSubmit={handlePhoneLogin} className="mt-8 space-y-4">
                     <Input
                         type="tel"
-                        placeholder="Phone number"
+                        placeholder="Phone number (e.g., +1234567890)"
                         className="h-11"
-                        disabled
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        required
                     />
-                 </div>
-                 <Button className="w-full mt-6" disabled>Log in</Button>
-                 <p className="text-center text-muted-foreground text-sm mt-4">Phone login is not yet available.</p>
+                    {showOTP && (
+                        <Input
+                            type="text"
+                            placeholder="Enter verification code"
+                            className="h-11"
+                            value={otpCode}
+                            onChange={(e) => setOtpCode(e.target.value)}
+                            maxLength={6}
+                            required
+                        />
+                    )}
+                </form>
+                <Button 
+                    className="w-full mt-6" 
+                    onClick={handlePhoneLogin}
+                    disabled={phoneLoading}
+                >
+                    {phoneLoading ? 'Sending...' : showOTP ? 'Verify Code' : 'Send Code'}
+                </Button>
+                {showOTP && (
+                    <Button 
+                        variant="link" 
+                        className="w-full mt-2 text-sm"
+                        onClick={() => {
+                            setShowOTP(false);
+                            setOtpCode('');
+                        }}
+                    >
+                        Change phone number
+                    </Button>
+                )}
             </TabsContent>
         </Tabs>
        

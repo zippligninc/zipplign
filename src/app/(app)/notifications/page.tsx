@@ -124,9 +124,13 @@ export default function NotificationsPage() {
 
     // Navigate to relevant content
     if (notification.zippclip_id) {
-      router.push(`/home`); // TODO: Navigate to specific zippclip
+      // Navigate to home page with the specific zippclip highlighted
+      router.push(`/home?highlight=${notification.zippclip_id}`);
     } else if (notification.type === 'follow') {
       router.push(`/user/${notification.actor.username}`);
+    } else if (notification.comment_id) {
+      // Navigate to home page with the comment's zippclip highlighted
+      router.push(`/home?highlight=${notification.zippclip_id}&comment=${notification.comment_id}`);
     }
   };
 

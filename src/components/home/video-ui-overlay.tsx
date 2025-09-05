@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { toggleLike, checkIsLiked } from '@/lib/social-actions';
 import { blockUser, checkIfBlocked } from '@/lib/moderation';
 import { incrementZippclipViews, getZippclipViews, formatViewCount } from '@/lib/view-tracking';
+import { toggleSave, checkIsSaved } from '@/lib/save-actions';
 import { CommentsModal } from './comments-modal';
 import { ReportModal } from '../moderation/report-modal';
 import {
@@ -68,6 +69,9 @@ export function VideoUIOverlay({
   const [viewCount, setViewCount] = useState(0);
   const [followerCount, setFollowerCount] = useState(0);
   const [hasTrackedView, setHasTrackedView] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveCount, setSaveCount] = useState(parseInt(saves.toString()) || 0);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Check if user has liked this post, if user is blocked, fetch view count and follower count
   useEffect(() => {
@@ -127,6 +131,14 @@ export function VideoUIOverlay({
             }
           } catch (error) {
             console.error('Error fetching follower count:', error);
+          }
+        }
+
+        // Check if user has saved this zippclip
+        if (id) {
+          const saveResult = await checkIsSaved(id);
+          if (saveResult.success && saveResult.data) {
+            setIsSaved(saveResult.data.saved);
           }
         }
       } catch (error) {
@@ -312,11 +324,33 @@ export function VideoUIOverlay({
       return;
     }
 
-    // TODO: Implement save functionality
-    toast({
-      title: 'Feature Coming Soon',
-      description: 'Save functionality will be available soon.',
-    });
+    if (isSaving) return; // Prevent double-clicking
+
+    setIsSaving(true);
+    
+    // Optimistic update
+    const newSaveState = !isSaved;
+    setIsSaved(newSaveState);
+    setSaveCount(prev => newSaveState ? prev + 1 : Math.max(prev - 1, 0));
+
+    const result = await toggleSave(id);
+    
+    if (!result.success) {
+      // Revert optimistic update on error
+      setIsSaved(!newSaveState);
+      setSaveCount(prev => newSaveState ? Math.max(prev - 1, 0) : prev + 1);
+      
+      toast({
+        title: 'Error',
+        description: result.error || 'Failed to update save status',
+        variant: 'destructive',
+      });
+    } else if (result.data) {
+      // Update with actual count from server
+      setSaveCount(result.data.saves);
+    }
+    
+    setIsSaving(false);
   };
 
 
@@ -428,9 +462,10 @@ export function VideoUIOverlay({
           size="icon" 
           className="h-auto w-auto flex-col gap-0.5 p-0 text-white hover:bg-transparent" 
           onClick={handleSave}
+          disabled={isSaving}
         >
-          <Bookmark className="h-5 w-5 fill-white" />
-          <span className="text-xs font-bold">{saves}</span>
+          <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
+          <span className="text-xs font-bold">{saveCount}</span>
         </Button>
         
         <Button 

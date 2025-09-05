@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { sendPasswordReset } from '@/lib/auth-utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function LoginPage() {
@@ -18,6 +19,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +67,38 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter your email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    const result = await sendPasswordReset(resetEmail);
+    
+    if (result.success) {
+      toast({
+        title: 'Email Sent',
+        description: result.message || 'Password reset email sent!',
+      });
+      setShowResetForm(false);
+      setResetEmail('');
+    } else {
+      toast({
+        title: 'Error',
+        description: result.error || 'Failed to send reset email',
+        variant: 'destructive',
+      });
+    }
+    
+    setResetLoading(false);
   };
 
   return (
@@ -143,12 +179,7 @@ export default function LoginPage() {
           <Button 
             variant="link" 
             className="p-0 h-auto text-primary"
-            onClick={() => {
-              toast({
-                title: 'Feature Coming Soon',
-                description: 'Password reset functionality will be available soon.',
-              });
-            }}
+            onClick={() => setShowResetForm(true)}
           >
             Forgot password?
           </Button>
@@ -157,6 +188,48 @@ export default function LoginPage() {
           </Button>
         </div>
       </main>
+
+      {/* Password Reset Modal */}
+      {showResetForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Reset Password</h2>
+            <p className="text-muted-foreground mb-4">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+            <form onSubmit={handlePasswordReset} className="space-y-4">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                className="h-11"
+                required
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowResetForm(false);
+                    setResetEmail('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={resetLoading}
+                >
+                  {resetLoading ? 'Sending...' : 'Send Reset Email'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

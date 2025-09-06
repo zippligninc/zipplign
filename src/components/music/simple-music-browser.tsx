@@ -106,11 +106,11 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
 
       {/* Tabs */}
       <Tabs defaultValue="trending" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="trending">Trending</TabsTrigger>
-          <TabsTrigger value="search">Search</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="all">All Music</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsTrigger value="trending" className="text-xs sm:text-sm">Trending</TabsTrigger>
+          <TabsTrigger value="search" className="text-xs sm:text-sm">Search</TabsTrigger>
+          <TabsTrigger value="categories" className="text-xs sm:text-sm">Categories</TabsTrigger>
+          <TabsTrigger value="all" className="text-xs sm:text-sm">All Music</TabsTrigger>
         </TabsList>
 
         {/* Trending Music */}
@@ -155,7 +155,7 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
 
         {/* Categories */}
         <TabsContent value="categories" className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {MUSIC_CATEGORIES.map((category) => (
               <Card
                 key={category.id}
@@ -197,9 +197,9 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
 
       {/* Audio Controls */}
       {playingTrack && (
-        <div className="fixed bottom-20 left-4 right-4 bg-black/90 backdrop-blur-sm rounded-lg p-4 z-50">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 relative">
+        <div className="fixed bottom-20 left-2 right-2 sm:left-4 sm:right-4 bg-black/90 backdrop-blur-sm rounded-lg p-3 sm:p-4 z-50">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 relative flex-shrink-0">
               <Image
                 src={playingTrack.image_url}
                 alt={playingTrack.album}
@@ -209,30 +209,30 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
             </div>
             
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-sm truncate">{playingTrack.name}</h4>
+              <h4 className="font-medium text-xs sm:text-sm truncate">{playingTrack.name}</h4>
               <p className="text-xs text-gray-400 truncate">{playingTrack.artist}</p>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                 onClick={stopPreview}
               >
-                <Pause className="h-4 w-4" />
+                <Pause className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
               
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                 onClick={toggleMute}
               >
                 {isMuted ? (
-                  <VolumeX className="h-4 w-4" />
+                  <VolumeX className="h-3 w-3 sm:h-4 sm:w-4" />
                 ) : (
-                  <Volume2 className="h-4 w-4" />
+                  <Volume2 className="h-3 w-3 sm:h-4 sm:w-4" />
                 )}
               </Button>
             </div>
@@ -268,9 +268,9 @@ function TrackCard({
       }`}
       onClick={onSelect}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 relative flex-shrink-0">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 relative flex-shrink-0">
             <Image
               src={track.image_url}
               alt={track.album}
@@ -280,13 +280,13 @@ function TrackCard({
           </div>
           
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-sm truncate">{track.name}</h4>
+            <h4 className="font-medium text-xs sm:text-sm truncate">{track.name}</h4>
             <p className="text-xs text-gray-400 truncate">{track.artist}</p>
-            <p className="text-xs text-gray-500 truncate">{track.album}</p>
+            <p className="text-xs text-gray-500 truncate hidden sm:block">{track.album}</p>
           </div>
           
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="text-xs text-gray-400 hidden sm:inline">
               {track.duration}
             </span>
             
@@ -294,16 +294,16 @@ function TrackCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   isPlaying ? onStop() : onPlay();
                 }}
               >
                 {isPlaying ? (
-                  <Pause className="h-4 w-4" />
+                  <Pause className="h-3 w-3 sm:h-4 sm:w-4" />
                 ) : (
-                  <Play className="h-4 w-4" />
+                  <Play className="h-3 w-3 sm:h-4 sm:w-4" />
                 )}
               </Button>
             )}
@@ -311,13 +311,13 @@ function TrackCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(track.spotify_url, '_blank');
               }}
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>

@@ -26,28 +26,29 @@ export default function AddMusicPage() {
   return (
     <div className="h-screen bg-black text-white overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between p-4 border-b border-gray-800">
-        <div className="flex items-center gap-4">
+      <header className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-800">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
             className="text-white hover:bg-gray-800"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-          <h1 className="text-lg font-semibold">Add Music</h1>
+          <h1 className="text-base sm:text-lg font-semibold">Add Music</h1>
         </div>
         {selectedTrack && (
-          <div className="flex items-center gap-2 text-sm text-teal-400">
-            <Check className="h-4 w-4" />
-            <span>Music Selected</span>
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-teal-400">
+            <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Music Selected</span>
+            <span className="sm:hidden">Selected</span>
           </div>
         )}
       </header>
 
       {/* Music Browser */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-2 sm:p-4">
         <SimpleMusicBrowser
           onTrackSelect={handleTrackSelect}
           selectedTrack={selectedTrack}
@@ -55,11 +56,11 @@ export default function AddMusicPage() {
       </div>
 
       {/* Bottom Actions */}
-      <div className="p-4 border-t border-gray-800">
-        <div className="flex gap-3">
+      <div className="p-2 sm:p-4 border-t border-gray-800">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <Button
             variant="outline"
-            className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-800"
+            className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-800 text-sm sm:text-base"
             onClick={() => {
               setSelectedTrack(null);
               localStorage.removeItem('selectedMusic');
@@ -68,7 +69,7 @@ export default function AddMusicPage() {
             No Music
           </Button>
           <Button 
-            className="flex-1 bg-teal-600 hover:bg-teal-700"
+            className="flex-1 bg-teal-600 hover:bg-teal-700 text-sm sm:text-base"
             onClick={handleContinue}
             disabled={!selectedTrack}
           >

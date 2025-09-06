@@ -42,6 +42,8 @@ interface VideoUIOverlayProps {
   media_url: string;
   media_type: 'image' | 'video';
   song_avatar_url: string | null;
+  spotify_track_id?: string;
+  spotify_preview_url?: string;
 }
 
 export function VideoUIOverlay({
@@ -56,6 +58,8 @@ export function VideoUIOverlay({
   media_url,
   media_type,
   song_avatar_url,
+  spotify_track_id,
+  spotify_preview_url,
 }: VideoUIOverlayProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -674,7 +678,7 @@ export function VideoUIOverlay({
       />
 
       {/* Audio Element for Music */}
-      {song && song.trim() !== '' && (
+      {(song && song.trim() !== '') && (
         <audio
           ref={audioRef}
           loop
@@ -685,9 +689,15 @@ export function VideoUIOverlay({
           onPause={() => setIsAudioPlaying(false)}
           onPlay={() => setIsAudioPlaying(true)}
         >
-          <source src={song} type="audio/mpeg" />
-          <source src={song} type="audio/wav" />
-          <source src={song} type="audio/ogg" />
+          {spotify_preview_url ? (
+            <source src={spotify_preview_url} type="audio/mpeg" />
+          ) : (
+            <>
+              <source src={song} type="audio/mpeg" />
+              <source src={song} type="audio/wav" />
+              <source src={song} type="audio/ogg" />
+            </>
+          )}
         </audio>
       )}
     </div>

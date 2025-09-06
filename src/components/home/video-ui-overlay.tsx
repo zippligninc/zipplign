@@ -10,10 +10,10 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { toggleLike, checkIsLiked } from '@/lib/social-actions';
+import { toggleLike, checkIsLiked, getLikeCount, getCommentCount } from '@/lib/social-actions';
 import { blockUser, checkIfBlocked } from '@/lib/moderation';
 import { incrementZippclipViews, getZippclipViews, formatViewCount } from '@/lib/view-tracking';
-import { toggleSave, checkIsSaved } from '@/lib/save-actions';
+import { toggleSave, checkIsSaved, getSaveCount } from '@/lib/save-actions';
 import { CommentsModal } from './comments-modal';
 import { ReportModal } from '../moderation/report-modal';
 import {
@@ -143,6 +143,31 @@ export function VideoUIOverlay({
           }
         }
 
+        // Fetch real social action counts
+        if (id) {
+          try {
+            // Fetch like count
+            const likeCountResult = await getLikeCount(id);
+            if (likeCountResult.success && likeCountResult.data) {
+              setLikeCount(likeCountResult.data.count);
+            }
+
+            // Fetch comment count
+            const commentCountResult = await getCommentCount(id);
+            if (commentCountResult.success && commentCountResult.data) {
+              setCommentCount(commentCountResult.data.count);
+            }
+
+            // Fetch save count
+            const saveCountResult = await getSaveCount(id);
+            if (saveCountResult.success && saveCountResult.data) {
+              setSaveCount(saveCountResult.data.saves);
+            }
+          } catch (error) {
+            console.error('Error fetching social action counts:', error);
+          }
+        }
+
         // Check if user has saved this zippclip
         if (id) {
           const saveResult = await checkIsSaved(id);
@@ -226,6 +251,16 @@ export function VideoUIOverlay({
         description: result.error || 'Failed to update like status',
         variant: 'destructive',
       });
+    } else {
+      // Refresh the real like count
+      try {
+        const likeCountResult = await getLikeCount(id);
+        if (likeCountResult.success && likeCountResult.data) {
+          setLikeCount(likeCountResult.data.count);
+        }
+      } catch (error) {
+        console.error('Error refreshing like count:', error);
+      }
     }
     
     setIsLiking(false);
@@ -255,8 +290,19 @@ export function VideoUIOverlay({
     setShowComments(true);
   };
 
-  const handleCommentAdded = () => {
+  const handleCommentAdded = async () => {
+    // Optimistic update
     setCommentCount(prev => prev + 1);
+    
+    // Refresh the real comment count
+    try {
+      const commentCountResult = await getCommentCount(id);
+      if (commentCountResult.success && commentCountResult.data) {
+        setCommentCount(commentCountResult.data.count);
+      }
+    } catch (error) {
+      console.error('Error refreshing comment count:', error);
+    }
   };
 
   const handleBlockUser = async () => {

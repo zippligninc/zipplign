@@ -368,3 +368,75 @@ export async function markNotificationAsRead(notificationId: string): Promise<So
     return { success: false, error: error.message };
   }
 }
+
+// Get like count for a zippclip
+export async function getLikeCount(zippclipId: string): Promise<SocialActionResponse> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+
+    const { count, error } = await supabase
+      .from('likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('zippclip_id', zippclipId);
+
+    if (error) {
+      console.error('Error fetching like count:', error);
+      return { success: true, data: { count: 0 } };
+    }
+
+    return { success: true, data: { count: count || 0 } };
+  } catch (error: any) {
+    console.error('Error in getLikeCount:', error);
+    return { success: true, data: { count: 0 } };
+  }
+}
+
+// Get comment count for a zippclip
+export async function getCommentCount(zippclipId: string): Promise<SocialActionResponse> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+
+    const { count, error } = await supabase
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('zippclip_id', zippclipId);
+
+    if (error) {
+      console.error('Error fetching comment count:', error);
+      return { success: true, data: { count: 0 } };
+    }
+
+    return { success: true, data: { count: count || 0 } };
+  } catch (error: any) {
+    console.error('Error in getCommentCount:', error);
+    return { success: true, data: { count: 0 } };
+  }
+}
+
+// Get save count for a zippclip
+export async function getSaveCount(zippclipId: string): Promise<SocialActionResponse> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+
+    const { count, error } = await supabase
+      .from('saves')
+      .select('*', { count: 'exact', head: true })
+      .eq('zippclip_id', zippclipId);
+
+    if (error) {
+      console.error('Error fetching save count:', error);
+      return { success: true, data: { count: 0 } };
+    }
+
+    return { success: true, data: { count: count || 0 } };
+  } catch (error: any) {
+    console.error('Error in getSaveCount:', error);
+    return { success: true, data: { count: 0 } };
+  }
+}

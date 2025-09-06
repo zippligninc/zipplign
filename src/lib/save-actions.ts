@@ -141,3 +141,29 @@ export async function checkIsSaved(zippclipId: string): Promise<SaveActionRespon
     return { success: true, data: { saved: false, saves: 0 } };
   }
 }
+
+/**
+ * Get save count for a zippclip
+ */
+export async function getSaveCount(zippclipId: string): Promise<SaveActionResponse> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+
+    const { count, error } = await supabase
+      .from('saves')
+      .select('*', { count: 'exact', head: true })
+      .eq('zippclip_id', zippclipId);
+
+    if (error) {
+      console.error('Error fetching save count:', error);
+      return { success: true, data: { saved: false, saves: 0 } };
+    }
+
+    return { success: true, data: { saved: false, saves: count || 0 } };
+  } catch (error: any) {
+    console.error('Error in getSaveCount:', error);
+    return { success: true, data: { saved: false, saves: 0 } };
+  }
+}

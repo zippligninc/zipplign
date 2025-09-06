@@ -9,10 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Store, User, Building, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Store, User, Building, Eye, EyeOff, Upload, Plus, Trash2, Link, Copy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { LogoMedium } from '@/components/common/logo';
+import { useRef } from 'react';
 
 export default function CreatorStoreSetupPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function CreatorStoreSetupPage() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [existingStore, setExistingStore] = useState<any>(null);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -30,8 +32,22 @@ export default function CreatorStoreSetupPage() {
     email: '',
     phone_number: '',
     is_public: false,
-    is_store_open: false
+    is_store_open: false,
+    logo_url: '',
+    store_link: ''
   });
+
+  // Product state
+  const [products, setProducts] = useState([
+    {
+      id: 1,
+      name: '',
+      description: '',
+      price: '',
+      image_url: '',
+      category: 'product'
+    }
+  ]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -72,6 +88,113 @@ export default function CreatorStoreSetupPage() {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({ 
+        title: 'Invalid file type', 
+        description: 'Please select an image file (JPG, PNG, GIF, etc.)', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ 
+        title: 'File too large', 
+        description: 'Please select an image smaller than 5MB', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `store-logo-${user.id}-${Date.now()}.${fileExt}`;
+    const filePath = `store-logos/${user.id}/${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('zippclips')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Logo upload error:', uploadError);
+        toast({ 
+          title: 'Error uploading logo', 
+          description: uploadError.message, 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('zippclips')
+        .getPublicUrl(filePath);
+      
+      setFormData(prev => ({ ...prev, logo_url: publicUrl }));
+      toast({ 
+        title: 'Logo uploaded!', 
+        description: 'Your store logo has been updated.' 
+      });
+    } catch (error: any) {
+      console.error('Logo upload error:', error);
+      toast({ 
+        title: 'Upload failed', 
+        description: error.message || 'Failed to upload logo', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const addProduct = () => {
+    const newProduct = {
+      id: Date.now(),
+      name: '',
+      description: '',
+      price: '',
+      image_url: '',
+      category: 'product'
+    };
+    setProducts(prev => [...prev, newProduct]);
+  };
+
+  const removeProduct = (id: number) => {
+    if (products.length > 1) {
+      setProducts(prev => prev.filter(product => product.id !== id));
+    }
+  };
+
+  const updateProduct = (id: number, field: string, value: string) => {
+    setProducts(prev => prev.map(product => 
+      product.id === id ? { ...product, [field]: value } : product
+    ));
+  };
+
+  const generateStoreLink = () => {
+    if (formData.business_name) {
+      const slug = formData.business_name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const link = `${window.location.origin}/store/${slug}`;
+      setFormData(prev => ({ ...prev, store_link: link }));
+    }
+  };
+
+  const copyStoreLink = () => {
+    if (formData.store_link) {
+      navigator.clipboard.writeText(formData.store_link);
+      toast({
+        title: 'Link copied!',
+        description: 'Your store link has been copied to clipboard.',
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -273,6 +396,159 @@ export default function CreatorStoreSetupPage() {
                     placeholder="+1 (555) 123-4567"
                     className="bg-gray-800 border-gray-700 text-white"
                   />
+                </div>
+              </div>
+
+              {/* Store Logo */}
+              <div className="space-y-3">
+                <h3 className="text-white font-medium text-sm">Store Logo</h3>
+                
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden">
+                    {formData.logo_url ? (
+                      <img 
+                        src={formData.logo_url} 
+                        alt="Store logo" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Store className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => logoFileInputRef.current?.click()}
+                      className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Logo
+                    </Button>
+                    <p className="text-xs text-gray-400 mt-1">
+                      JPG, PNG, GIF up to 5MB
+                    </p>
+                  </div>
+                </div>
+                
+                <input
+                  type="file"
+                  ref={logoFileInputRef}
+                  onChange={handleLogoUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+              </div>
+
+              {/* Products & Services */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-white font-medium text-sm">Products & Services</h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addProduct}
+                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Product
+                  </Button>
+                </div>
+                
+                <div className="space-y-3">
+                  {products.map((product, index) => (
+                    <div key={product.id} className="bg-gray-800/50 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-white text-sm font-medium">Product {index + 1}</h4>
+                        {products.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeProduct(product.id)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          placeholder="Product name"
+                          value={product.name}
+                          onChange={(e) => updateProduct(product.id, 'name', e.target.value)}
+                          className="bg-gray-700 border-gray-600 text-white text-sm"
+                        />
+                        <Input
+                          placeholder="Price (e.g., $29.99)"
+                          value={product.price}
+                          onChange={(e) => updateProduct(product.id, 'price', e.target.value)}
+                          className="bg-gray-700 border-gray-600 text-white text-sm"
+                        />
+                      </div>
+                      
+                      <Textarea
+                        placeholder="Product description"
+                        value={product.description}
+                        onChange={(e) => updateProduct(product.id, 'description', e.target.value)}
+                        className="bg-gray-700 border-gray-600 text-white text-sm min-h-[60px]"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Store Link */}
+              <div className="space-y-3">
+                <h3 className="text-white font-medium text-sm">Store Link</h3>
+                
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Your store link will appear here"
+                      value={formData.store_link}
+                      readOnly
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateStoreLink}
+                      disabled={!formData.business_name}
+                      className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                    >
+                      <Link className="w-4 h-4 mr-1" />
+                      Generate
+                    </Button>
+                  </div>
+                  
+                  {formData.store_link && (
+                    <div className="flex gap-2">
+                      <Input
+                        value={formData.store_link}
+                        readOnly
+                        className="bg-gray-700 border-gray-600 text-white text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={copyStoreLink}
+                        className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-gray-400">
+                    Share this link to let customers find your store
+                  </p>
                 </div>
               </div>
 

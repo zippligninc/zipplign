@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create creator_stores table
 CREATE TABLE IF NOT EXISTS creator_stores (
   id uuid not null primary key default uuid_generate_v4(),
-  user_id uuid references public.profiles on delete cascade not null,
+  user_id uuid references public.profiles(id) on delete cascade not null,
   business_name text not null,
   business_type text default 'individual' CHECK (business_type IN ('individual', 'business')),
   description text,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS creator_stores (
 -- Create store_products table
 CREATE TABLE IF NOT EXISTS store_products (
   id uuid not null primary key default uuid_generate_v4(),
-  store_id uuid references public.creator_stores on delete cascade not null,
+  store_id uuid references public.creator_stores(id) on delete cascade not null,
   name text not null,
   description text,
   price decimal(10,2),
@@ -40,9 +40,9 @@ CREATE TABLE IF NOT EXISTS store_products (
 -- Create store_orders table (for future use)
 CREATE TABLE IF NOT EXISTS store_orders (
   id uuid not null primary key default uuid_generate_v4(),
-  store_id uuid references public.creator_stores on delete cascade not null,
-  customer_id uuid references public.profiles on delete cascade not null,
-  product_id uuid references public.store_products on delete cascade not null,
+  store_id uuid references public.creator_stores(id) on delete cascade not null,
+  customer_id uuid references public.profiles(id) on delete cascade not null,
+  product_id uuid references public.store_products(id) on delete cascade not null,
   quantity integer default 1,
   total_amount decimal(10,2) not null,
   status text default 'pending' CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled')),

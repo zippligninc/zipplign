@@ -288,6 +288,7 @@ export default function CreatePage() {
         media_type: mediaData?.type,
         song: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : undefined,
         song_avatar_url: selectedMusic?.image,
+        spotify_preview_url: selectedMusic?.preview_url || null,
         is_public: false
       };
 

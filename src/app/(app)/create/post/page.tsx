@@ -248,7 +248,8 @@ export default function PostPage() {
             media_type: media.type,
             description: caption || '',
             song: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : 'Original Sound',
-            song_avatar_url: selectedMusic ? selectedMusic.image : ''
+            song_avatar_url: selectedMusic ? selectedMusic.image : '',
+            spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null
         });
         
         const { error: insertError } = await supabase.from('zippclips').insert({
@@ -256,7 +257,8 @@ export default function PostPage() {
              media_type: media.type,
              description: caption || '',
              song: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : 'Original Sound',
-             song_avatar_url: selectedMusic ? selectedMusic.image : ''
+             song_avatar_url: selectedMusic ? selectedMusic.image : '',
+             spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null
         });
 
         if (insertError) {

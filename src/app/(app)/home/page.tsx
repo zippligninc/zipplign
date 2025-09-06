@@ -11,12 +11,7 @@ import { LogoXLarge } from '@/components/common/logo';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useTouchGestures, useHapticFeedback, useDeviceCapabilities } from '@/hooks/use-touch-gestures';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from '@/components/ui/carousel';
+// Using scroll snap instead of carousel for better video control
 import { VideoUIOverlay } from '@/components/home/video-ui-overlay';
 import { LazyMedia } from '@/components/optimized/lazy-media';
 import { ZippclipGridSkeleton, LoadingOverlay } from '@/components/ui/loading-states';
@@ -272,7 +267,7 @@ export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
-  const [api, setApi] = React.useState<CarouselApi>()
+  // Using scroll snap instead of carousel API
   const [current, setCurrent] = React.useState(0)
   const { triggerHaptic } = useHapticFeedback();
   const { isMobile } = useDeviceCapabilities();
@@ -359,21 +354,24 @@ export default function HomePage() {
     fetchZippclips();
   }, [fetchZippclips]);
 
+  // Track current video index for scroll snap
   React.useEffect(() => {
-    if (!api) {
-      return
-    }
- 
-    setCurrent(api.selectedScrollSnap())
- 
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap())
-      // Haptic feedback when scrolling on mobile
-      if (isMobile) {
-        triggerHaptic('light');
+    const handleScroll = () => {
+      const scrollContainer = document.querySelector('.snap-y');
+      if (scrollContainer) {
+        const scrollTop = scrollContainer.scrollTop;
+        const itemHeight = window.innerHeight;
+        const currentIndex = Math.round(scrollTop / itemHeight);
+        setCurrent(currentIndex);
       }
-    })
-  }, [api, isMobile, triggerHaptic])
+    };
+
+    const scrollContainer = document.querySelector('.snap-y');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [zippclips.length]);
 
 
   // Fetch user session and profile
@@ -455,22 +453,13 @@ export default function HomePage() {
               <p className="text-sm text-white/70">Loading amazing content...</p>
            </div>
         ) : zippclips && zippclips.length > 0 ? (
-          <Carousel
-            setApi={setApi}
-            className="h-full w-full"
-            opts={{
-              align: "start",
-              loop: false,
-            }}
-          >
-            <CarouselContent className="h-full">
-              {zippclips.map((clip, index) => (
-                <CarouselItem key={clip.id} className="h-full">
-                  <MediaPlayer clip={clip} isActive={index === current} />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
+          <div className="h-full w-full overflow-y-auto snap-y snap-mandatory">
+            {zippclips.map((clip, index) => (
+              <div key={clip.id} className="h-full w-full snap-start">
+                <MediaPlayer clip={clip} isActive={index === current} />
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center bg-black text-white">
               <LogoXLarge className="h-20 w-20 mb-4" />

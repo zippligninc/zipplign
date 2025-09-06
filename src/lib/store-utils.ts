@@ -69,7 +69,7 @@ export async function getPublicStores(limit: number = 20, offset: number = 0): P
       .from('creator_stores')
       .select(`
         *,
-        profiles!creator_stores_user_id_fkey (
+        profiles (
           username,
           full_name,
           avatar_url
@@ -371,7 +371,7 @@ export async function searchStores(query: string, limit: number = 20): Promise<S
       .from('creator_stores')
       .select(`
         *,
-        profiles!creator_stores_user_id_fkey (
+        profiles (
           username,
           full_name,
           avatar_url

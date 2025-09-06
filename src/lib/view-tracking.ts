@@ -18,9 +18,15 @@ export async function incrementZippclipViews(zippclipId: string): Promise<ViewTr
       throw new Error('Supabase client not available');
     }
 
+    if (!zippclipId || typeof zippclipId !== 'string') {
+      console.error('Invalid zippclip ID:', zippclipId);
+      return { success: false, error: 'Invalid zippclip ID' };
+    }
+
     // Try to get the current view count (with fallback if column doesn't exist)
     let currentViews = 0;
     try {
+      console.log('Fetching current views for zippclip:', zippclipId);
       const { data: currentData, error: fetchError } = await supabase
         .from('zippclips')
         .select('views')
@@ -49,28 +55,38 @@ export async function incrementZippclipViews(zippclipId: string): Promise<ViewTr
     const newViews = currentViews + 1;
 
     // Update the view count
-    const { data, error } = await supabase
+    const { error: updateError } = await supabase
       .from('zippclips')
       .update({ views: newViews })
-      .eq('id', zippclipId)
-      .select('views')
-      .single();
+      .eq('id', zippclipId);
 
-    if (error) {
+    if (updateError) {
       // Only log meaningful error messages
-      if (error.message) {
-        console.error('Error incrementing views:', error.message);
+      if (updateError.message) {
+        console.error('Error incrementing views:', updateError.message);
       }
       // If views column doesn't exist, return success with current count
-      if (error.message && error.message.includes('column "views" does not exist')) {
+      if (updateError.message && updateError.message.includes('column "views" does not exist')) {
         return { success: true, data: { views: currentViews } };
       }
-      return { success: false, error: error.message || 'Failed to increment views' };
+      return { success: false, error: updateError.message || 'Failed to increment views' };
+    }
+
+    // Verify the update by fetching the current count
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('zippclips')
+      .select('views')
+      .eq('id', zippclipId)
+      .single();
+
+    if (verifyError) {
+      // If verification fails, return the expected count
+      return { success: true, data: { views: newViews } };
     }
 
     return { 
       success: true, 
-      data: { views: data?.views || newViews } 
+      data: { views: verifyData?.views || newViews } 
     };
   } catch (error: any) {
     console.error('Error in incrementZippclipViews:', error);

@@ -194,14 +194,16 @@ export default function ShopPage() {
           )}
         </div>
 
-        <div className="px-4 py-4 border-t border-gray-800">
+        {/* Floating Create Store Button */}
+        <div className="fixed bottom-20 right-4 z-50">
           <Button 
-            className="w-full bg-teal-600 hover:bg-teal-700"
+            size="lg"
+            className="bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-lg"
             asChild
           >
             <Link href="/creator-store/setup">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Your Store
+              <Plus className="w-5 h-5 mr-2" />
+              Create Store
             </Link>
           </Button>
         </div>

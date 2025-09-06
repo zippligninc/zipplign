@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { updatePassword, validatePassword } from '@/lib/auth-utils';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -198,5 +198,24 @@ export default function ResetPasswordPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full flex-col bg-background text-foreground">
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-md space-y-6">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold">Reset Password</h1>
+              <p className="text-muted-foreground mt-2">Loading...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

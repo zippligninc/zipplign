@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { getMessages, sendMessage, markMessagesAsRead, subscribeToMessages, type
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
-export default function ConversationPage() {
+function ConversationContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -346,5 +346,36 @@ export default function ConversationPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ConversationPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full flex-col bg-background text-foreground">
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" disabled>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
+              <div className="space-y-1">
+                <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+                <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+            <p className="text-muted-foreground">Loading conversation...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <ConversationContent />
+    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { exchangeCodeForToken } from '@/lib/spotify';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';

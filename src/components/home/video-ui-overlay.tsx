@@ -433,46 +433,46 @@ export function VideoUIOverlay({
         </div>
 
         {/* Right Column (40%) - Social Actions */}
-        <div className="flex-1 max-w-[40%] flex items-center justify-end gap-5">
+        <div className="flex-1 max-w-[40%] flex items-center justify-end gap-4">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
+            className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full" 
             onClick={handleLike}
             disabled={isLiking}
           >
-            <Heart className={`h-8 w-8 ${isLiked ? 'fill-red-500 text-red-500' : 'fill-white'}`} />
+            <Heart className={`h-6 w-6 ${isLiked ? 'fill-red-500 text-red-500' : 'fill-white'}`} />
             <span className="text-xs font-bold">{likeCount}</span>
           </Button>
           
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
+            className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full" 
             onClick={handleComment}
           >
-            <MessageCircle className="h-8 w-8 fill-white" />
+            <MessageCircle className="h-6 w-6 fill-white" />
             <span className="text-xs font-bold">{commentCount}</span>
           </Button>
           
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
+            className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full" 
             onClick={handleSave}
             disabled={isSaving}
           >
-            <Bookmark className={`h-8 w-8 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
+            <Bookmark className={`h-6 w-6 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
             <span className="text-xs font-bold">{saveCount}</span>
           </Button>
           
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
+            className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full" 
             onClick={handleShare}
           >
-            <Send className="h-8 w-8 fill-white" />
+            <Send className="h-6 w-6 fill-white" />
             <span className="text-xs font-bold">{shares}</span>
           </Button>
 
@@ -482,9 +482,9 @@ export function VideoUIOverlay({
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full"
+                className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full"
               >
-                <MoreHorizontal className="h-8 w-8 fill-white" />
+                <MoreHorizontal className="h-6 w-6 fill-white" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">

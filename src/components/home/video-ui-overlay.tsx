@@ -1,11 +1,11 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Send, Music, Bookmark, MoreHorizontal, Flag, UserX, Zap, Bell } from 'lucide-react';
+import { Heart, MessageCircle, Send, Music, Bookmark, MoreHorizontal, Flag, UserX, Zap, Bell, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -73,6 +73,12 @@ export function VideoUIOverlay({
   const [saveCount, setSaveCount] = useState(parseInt(saves.toString()) || 0);
   const [isSaving, setIsSaving] = useState(false);
   const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
+  
+  // Audio state
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [isAudioMuted, setIsAudioMuted] = useState(true);
+  const [audioError, setAudioError] = useState(false);
 
   // Check if user has liked this post, if user is blocked, fetch view count and follower count
   useEffect(() => {
@@ -305,6 +311,40 @@ export function VideoUIOverlay({
     }
   };
 
+  // Audio control functions
+  const toggleAudioPlay = () => {
+    if (audioRef.current) {
+      if (isAudioPlaying) {
+        audioRef.current.pause();
+        setIsAudioPlaying(false);
+      } else {
+        audioRef.current.play().catch(error => {
+          console.warn("Audio autoplay prevented: ", error);
+          setIsAudioPlaying(false);
+          setAudioError(true);
+        });
+        setIsAudioPlaying(true);
+      }
+    }
+  };
+
+  const toggleAudioMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isAudioMuted;
+      setIsAudioMuted(!isAudioMuted);
+    }
+  };
+
+  const handleAudioError = () => {
+    console.error('Audio failed to load');
+    setAudioError(true);
+    setIsAudioPlaying(false);
+  };
+
+  const handleAudioLoad = () => {
+    setAudioError(false);
+  };
+
   const handleBlockUser = async () => {
     if (!user?.id) return;
 
@@ -488,6 +528,34 @@ export function VideoUIOverlay({
         <div className="flex items-center gap-2">
           <Music className="h-4 w-4 text-teal-400" />
           <p className="text-xs font-medium truncate text-white">{song}</p>
+          {song && song.trim() !== '' && (
+            <div className="flex items-center gap-1 ml-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={toggleAudioPlay}
+              >
+                {isAudioPlaying ? (
+                  <Pause className="h-3 w-3 text-white" />
+                ) : (
+                  <Play className="h-3 w-3 text-white" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={toggleAudioMute}
+              >
+                {isAudioMuted ? (
+                  <VolumeX className="h-3 w-3 text-white" />
+                ) : (
+                  <Volume2 className="h-3 w-3 text-white" />
+                )}
+              </Button>
+            </div>
+          )}
         </div>
         
         {/* View Count Display */}
@@ -604,6 +672,24 @@ export function VideoUIOverlay({
         contentId={id}
         contentDescription={description}
       />
+
+      {/* Audio Element for Music */}
+      {song && song.trim() !== '' && (
+        <audio
+          ref={audioRef}
+          loop
+          muted={isAudioMuted}
+          onError={handleAudioError}
+          onLoadedData={handleAudioLoad}
+          onEnded={() => setIsAudioPlaying(false)}
+          onPause={() => setIsAudioPlaying(false)}
+          onPlay={() => setIsAudioPlaying(true)}
+        >
+          <source src={song} type="audio/mpeg" />
+          <source src={song} type="audio/wav" />
+          <source src={song} type="audio/ogg" />
+        </audio>
+      )}
     </div>
     </>
   );

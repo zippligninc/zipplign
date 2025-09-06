@@ -445,23 +445,23 @@ export default function HomePage() {
 
 
   return (
-    <div className="relative h-screen w-full bg-black overflow-hidden">
+    <div className="relative h-full w-full bg-black overflow-hidden">
         <HomeHeader />
         {loading ? (
-           <div className="flex h-screen w-full flex-col items-center justify-center bg-black text-white">
+           <div className="flex h-full w-full flex-col items-center justify-center bg-black text-white">
               <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
               <p className="text-sm text-white/70">Loading amazing content...</p>
            </div>
         ) : zippclips && zippclips.length > 0 ? (
-          <div className="h-screen w-full overflow-y-auto snap-y snap-mandatory">
+          <div className="h-full w-full overflow-y-auto snap-y snap-mandatory">
             {zippclips.map((clip, index) => (
-              <div key={clip.id} className="h-screen w-full snap-start">
+              <div key={clip.id} className="h-full w-full snap-start">
                 <MediaPlayer clip={clip} isActive={index === current} />
               </div>
             ))}
           </div>
         ) : (
-          <div className="flex h-screen w-full flex-col items-center justify-center bg-black text-white">
+          <div className="flex h-full w-full flex-col items-center justify-center bg-black text-white">
               <LogoXLarge className="h-20 w-20 mb-4" />
               <h2 className="text-xl font-bold mb-2">No Zippclips Yet</h2>
               <p className="text-muted-foreground mb-6 text-center text-sm max-w-md">

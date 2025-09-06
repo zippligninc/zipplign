@@ -235,7 +235,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const isOwnProfile = currentUser?.id === profile.id;
 
   return (
-    <div className="h-screen bg-black text-white pb-20 overflow-y-auto">
+    <div className="h-full bg-black text-white overflow-y-auto">
       {/* Dynamic Island */}
       <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-20">
         <div className="w-32 h-6 bg-black rounded-full"></div>

@@ -513,12 +513,12 @@ export default function ZippersPage() {
   }
 
   return (
-    <div className="h-screen bg-black text-white overflow-hidden">
+    <div className="h-full bg-black text-white overflow-hidden">
       <ZippersHeader />
       
       <ErrorBoundary>
         <div 
-          className="h-[calc(100vh-96px)] w-full overflow-y-auto snap-y snap-mandatory"
+          className="h-full w-full overflow-y-auto snap-y snap-mandatory"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}

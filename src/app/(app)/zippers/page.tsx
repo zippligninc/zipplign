@@ -159,13 +159,13 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
           <Button
             variant="ghost"
             size="sm"
-            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/80 hover:bg-black/90 z-50 border border-white/20"
+            className="absolute top-2 right-2 h-10 w-10 rounded-full bg-black/80 hover:bg-black/90 z-50 border border-white/20"
             onClick={toggleMute}
           >
             {isMuted ? (
-              <VolumeX className="h-4 w-4 text-white" />
+              <VolumeX className="h-5 w-5 text-white" />
             ) : (
-              <Volume2 className="h-4 w-4 text-white" />
+              <Volume2 className="h-5 w-5 text-white" />
             )}
           </Button>
         </div>
@@ -186,13 +186,13 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
           <Button
             variant="ghost"
             size="lg"
-            className="h-16 w-16 rounded-full bg-black/50 hover:bg-black/70"
+            className="h-20 w-20 rounded-full bg-black/50 hover:bg-black/70"
             onClick={togglePlay}
           >
             {isPlaying ? (
-              <Pause className="h-8 w-8 text-white" />
+              <Pause className="h-10 w-10 text-white" />
             ) : (
-              <Play className="h-8 w-8 text-white" />
+              <Play className="h-10 w-10 text-white" />
             )}
           </Button>
         </div>

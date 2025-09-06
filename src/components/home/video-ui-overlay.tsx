@@ -359,7 +359,7 @@ export function VideoUIOverlay({
     <>
       {/* Picture-in-Picture Window - Top Left */}
       <div className="fixed top-16 left-4 z-50">
-        <div className="w-20 h-28 bg-black/80 rounded-lg overflow-hidden border-2 border-white/30 shadow-lg">
+        <div className="w-24 h-32 bg-black/90 rounded-xl overflow-hidden border-2 border-teal-400/50 shadow-2xl backdrop-blur-sm">
           {media_type === 'video' ? (
             <video
               src={media_url}
@@ -373,15 +373,15 @@ export function VideoUIOverlay({
             <Image
               src={media_url}
               alt="Preview"
-              width={80}
-              height={112}
+              width={96}
+              height={128}
               className="w-full h-full object-cover"
             />
           )}
         </div>
         {/* Follower Count Display */}
-        <div className="mt-2 text-center">
-          <div className="bg-black/80 rounded-lg px-2 py-1 border border-white/30">
+        <div className="mt-3 text-center">
+          <div className="bg-gradient-to-r from-teal-500/90 to-green-500/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-teal-400/50 shadow-lg">
             <p className="text-white text-xs font-bold">
               {formatViewCount(followerCount)} Zippers
             </p>
@@ -390,92 +390,94 @@ export function VideoUIOverlay({
       </div>
 
       {/* Main Overlay - Bottom */}
-      <div className="absolute bottom-[7rem] left-0 right-0 flex items-end justify-between p-4 pb-4 text-white z-10 sm:bottom-28 md:bottom-16">
+      <div className="absolute bottom-[4rem] left-0 right-0 flex items-end justify-between p-4 pb-4 text-white z-10 sm:bottom-20 md:bottom-12">
       {/* Left Side - User Info and Content */}
-      <div className="flex-1 max-w-[80%] space-y-2">
-        <div className="flex items-center gap-2">
+      <div className="flex-1 max-w-[75%] space-y-3">
+        <div className="flex items-center gap-3">
           <Link href={`/user/${user.username}`}>
-            <Avatar className="h-9 w-9 border-2 border-white">
+            <Avatar className="h-10 w-10 border-2 border-white/90 shadow-lg">
               <AvatarImage 
                 src={user.avatar_url && user.avatar_url.trim() !== '' ? user.avatar_url : undefined} 
                 alt={user.full_name} 
               />
-              <AvatarFallback className="bg-gray-600 text-white font-bold text-sm">
+              <AvatarFallback className="bg-gradient-to-br from-teal-500 to-green-500 text-white font-bold text-sm">
                 {user.full_name.charAt(0)}
               </AvatarFallback>
             </Avatar>
           </Link>
-          <div>
+          <div className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
             <Link href={`/user/${user.username}`}>
-                <p className="font-bold text-sm">{user.full_name}</p>
-                <p className="text-xs text-white/90">@{user.username}</p>
+                <p className="font-bold text-sm text-white">{user.full_name}</p>
+                <p className="text-xs text-white/80">@{user.username}</p>
             </Link>
           </div>
         </div>
         
-        <p className="text-sm leading-relaxed max-w-[95%] font-medium">
-          {description}
-          {description.length > 80 && (
-            <span className="text-white/80 ml-1">... See More</span>
-          )}
-        </p>
+        <div className="bg-black/50 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-lg">
+          <p className="text-sm leading-relaxed font-medium text-white">
+            {description}
+            {description.length > 80 && (
+              <span className="text-white/70 ml-1">... See More</span>
+            )}
+          </p>
+        </div>
         
-        <div className="flex items-center gap-2">
-          <Music className="h-3 w-3" />
-          <p className="text-xs font-medium truncate">{song}</p>
+        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+          <Music className="h-4 w-4 text-teal-400" />
+          <p className="text-xs font-medium truncate text-white">{song}</p>
         </div>
         
         {/* View Count Display */}
-        <div className="flex items-center gap-1">
-          <div className="w-1 h-1 bg-white rounded-full"></div>
-          <p className="text-xs text-white/80 font-medium">
+        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+          <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
+          <p className="text-xs text-white/90 font-medium">
             {formatViewCount(viewCount)} views
           </p>
         </div>
       </div>
 
       {/* Right Side - Social Actions */}
-      <div className="flex flex-col items-center space-y-1.5">
+      <div className="flex flex-col items-center space-y-2">
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-0.5 p-0 text-white hover:bg-transparent" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
           onClick={handleLike}
           disabled={isLiking}
         >
-          <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-500 text-red-500' : 'fill-white'}`} />
-          <span className="text-xs font-bold">{likeCount}</span>
+          <Heart className={`h-7 w-7 ${isLiked ? 'fill-red-500 text-red-500' : 'fill-white'}`} />
+          <span className="text-sm font-bold">{likeCount}</span>
         </Button>
         
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-0.5 p-0 text-white hover:bg-transparent" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
           onClick={handleComment}
         >
-          <MessageCircle className="h-5 w-5 fill-white" />
-          <span className="text-xs font-bold">{commentCount}</span>
+          <MessageCircle className="h-7 w-7 fill-white" />
+          <span className="text-sm font-bold">{commentCount}</span>
         </Button>
         
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-0.5 p-0 text-white hover:bg-transparent" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
           onClick={handleSave}
           disabled={isSaving}
         >
-          <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
-          <span className="text-xs font-bold">{saveCount}</span>
+          <Bookmark className={`h-7 w-7 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
+          <span className="text-sm font-bold">{saveCount}</span>
         </Button>
         
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-0.5 p-0 text-white hover:bg-transparent" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
           onClick={handleShare}
         >
-          <Send className="h-5 w-5 fill-white" />
-          <span className="text-xs font-bold">{shares}</span>
+          <Send className="h-7 w-7 fill-white" />
+          <span className="text-sm font-bold">{shares}</span>
         </Button>
 
 
@@ -485,9 +487,9 @@ export function VideoUIOverlay({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-auto w-auto flex-col gap-0.5 p-0 text-white hover:bg-transparent"
+              className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full"
             >
-              <MoreHorizontal className="h-5 w-5 fill-white" />
+              <MoreHorizontal className="h-7 w-7 fill-white" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">

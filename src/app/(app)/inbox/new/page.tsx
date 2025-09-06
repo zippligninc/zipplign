@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ interface User {
   avatar_url: string | null;
 }
 
-export default function NewMessagePage() {
+function NewMessageContent() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,5 +217,20 @@ export default function NewMessagePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function NewMessagePage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading...</p>
+        </div>
+      </div>
+    }>
+      <NewMessageContent />
+    </Suspense>
   );
 }

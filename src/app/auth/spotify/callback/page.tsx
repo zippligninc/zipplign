@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { exchangeCodeForToken } from '@/lib/spotify';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
-export default function SpotifyCallbackPage() {
+function SpotifyCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -147,5 +147,21 @@ export default function SpotifyCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SpotifyCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-16 w-16 mx-auto text-teal-400 animate-spin mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Connecting to Spotify</h1>
+          <p className="text-gray-400">Please wait...</p>
+        </div>
+      </div>
+    }>
+      <SpotifyCallbackContent />
+    </Suspense>
   );
 }

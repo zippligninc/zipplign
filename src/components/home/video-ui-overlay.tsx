@@ -359,7 +359,7 @@ export function VideoUIOverlay({
     <>
       {/* Picture-in-Picture Window - Top Left */}
       <div className="fixed top-16 left-4 z-50">
-        <div className="w-24 h-32 bg-black/90 rounded-xl overflow-hidden border-2 border-teal-400/50 shadow-2xl backdrop-blur-sm">
+        <div className="w-24 h-32 rounded-xl overflow-hidden border-2 border-teal-400/50 shadow-2xl">
           {media_type === 'video' ? (
             <video
               src={media_url}
@@ -381,7 +381,7 @@ export function VideoUIOverlay({
         </div>
         {/* Follower Count Display */}
         <div className="mt-3 text-center">
-          <div className="bg-gradient-to-r from-teal-500/90 to-green-500/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-teal-400/50 shadow-lg">
+          <div>
             <p className="text-white text-xs font-bold">
               {formatViewCount(followerCount)} Zippers
             </p>
@@ -405,7 +405,7 @@ export function VideoUIOverlay({
               </AvatarFallback>
             </Avatar>
           </Link>
-          <div className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+          <div>
             <Link href={`/user/${user.username}`}>
                 <p className="font-bold text-sm text-white">{user.full_name}</p>
                 <p className="text-xs text-white/80">@{user.username}</p>
@@ -413,7 +413,7 @@ export function VideoUIOverlay({
           </div>
         </div>
         
-        <div className="bg-black/50 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-lg">
+        <div>
           <p className="text-sm leading-relaxed font-medium text-white">
             {description}
             {description.length > 80 && (
@@ -422,13 +422,13 @@ export function VideoUIOverlay({
           </p>
         </div>
         
-        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+        <div className="flex items-center gap-2">
           <Music className="h-4 w-4 text-teal-400" />
           <p className="text-xs font-medium truncate text-white">{song}</p>
         </div>
         
         {/* View Count Display */}
-        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+        <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
           <p className="text-xs text-white/90 font-medium">
             {formatViewCount(viewCount)} views

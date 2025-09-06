@@ -414,7 +414,7 @@ export function VideoUIOverlay({
         </div>
         
         <div>
-          <p className="text-xs leading-relaxed font-medium text-white">
+          <p className="text-[10px] leading-relaxed font-medium text-white">
             {description}
             {description.length > 80 && (
               <span className="text-white/70 ml-1">... See More</span>

@@ -170,8 +170,11 @@ export function VideoUIOverlay({
             setViewCount(result.data.views);
             setHasTrackedView(true);
           }
-        } catch (error) {
-          console.error('Error tracking view:', error);
+        } catch (error: any) {
+          // Only log meaningful error messages
+          if (error?.message) {
+            console.error('Error tracking view:', error.message);
+          }
         }
       }
     };

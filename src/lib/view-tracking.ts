@@ -28,12 +28,15 @@ export async function incrementZippclipViews(zippclipId: string): Promise<ViewTr
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching current views:', fetchError);
+        // Only log meaningful error messages
+        if (fetchError.message) {
+          console.error('Error fetching current views:', fetchError.message);
+        }
         // If views column doesn't exist, return success with 0 views
-        if (fetchError.message.includes('column "views" does not exist')) {
+        if (fetchError.message && fetchError.message.includes('column "views" does not exist')) {
           return { success: true, data: { views: 0 } };
         }
-        return { success: false, error: fetchError.message };
+        return { success: false, error: fetchError.message || 'Failed to fetch views' };
       }
 
       currentViews = currentData?.views || 0;
@@ -54,12 +57,15 @@ export async function incrementZippclipViews(zippclipId: string): Promise<ViewTr
       .single();
 
     if (error) {
-      console.error('Error incrementing views:', error);
+      // Only log meaningful error messages
+      if (error.message) {
+        console.error('Error incrementing views:', error.message);
+      }
       // If views column doesn't exist, return success with current count
-      if (error.message.includes('column "views" does not exist')) {
+      if (error.message && error.message.includes('column "views" does not exist')) {
         return { success: true, data: { views: currentViews } };
       }
-      return { success: false, error: error.message };
+      return { success: false, error: error.message || 'Failed to increment views' };
     }
 
     return { 

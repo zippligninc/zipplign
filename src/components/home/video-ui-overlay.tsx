@@ -390,7 +390,7 @@ export function VideoUIOverlay({
       </div>
 
       {/* Main Overlay - Bottom */}
-      <div className="absolute bottom-[1.5rem] left-0 right-0 flex items-end justify-between p-4 pb-0 text-white z-10 sm:bottom-8 md:bottom-6">
+      <div className="absolute bottom-[0.5rem] left-0 right-0 flex items-end justify-between p-4 pb-0 text-white z-10 sm:bottom-4 md:bottom-2">
       {/* Left Side - User Info and Content */}
       <div className="flex-1 max-w-[75%] space-y-3">
         <div className="flex items-center gap-3">

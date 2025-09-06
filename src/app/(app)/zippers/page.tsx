@@ -146,7 +146,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         <div className="relative w-full h-full">
           <video
             ref={videoRef}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
             loop
             muted={isMuted}
             playsInline

@@ -162,23 +162,23 @@ export default function CreatorStoreSetupPage() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto p-6 pb-20">
+      <div className="max-w-xl mx-auto p-4 pb-20">
         <Card className="bg-gray-900 border-gray-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Store className="h-5 w-5" />
-              {existingStore ? 'Update Your Store' : 'Create Your Creator Store'}
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-white text-lg">
+              <Store className="h-4 w-4" />
+              {existingStore ? 'Update Store' : 'Create Store'}
             </CardTitle>
-            <p className="text-gray-400 text-sm">
-              Set up your creator store to sell products and services to your followers.
+            <p className="text-gray-400 text-xs">
+              Set up your creator store to sell products and services.
             </p>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="pt-0">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Business Name */}
-              <div className="space-y-2">
-                <Label htmlFor="business_name" className="text-white">
-                  Business Name or Your Name *
+              <div className="space-y-1">
+                <Label htmlFor="business_name" className="text-white text-sm">
+                  Business Name *
                 </Label>
                 <Input
                   id="business_name"
@@ -191,8 +191,8 @@ export default function CreatorStoreSetupPage() {
               </div>
 
               {/* Business Type */}
-              <div className="space-y-2">
-                <Label className="text-white">Business Type</Label>
+              <div className="space-y-1">
+                <Label className="text-white text-sm">Business Type</Label>
                 <Select
                   value={formData.business_type}
                   onValueChange={(value) => handleInputChange('business_type', value)}
@@ -218,8 +218,8 @@ export default function CreatorStoreSetupPage() {
               </div>
 
               {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-white">
+              <div className="space-y-1">
+                <Label htmlFor="description" className="text-white text-sm">
                   Store Description
                 </Label>
                 <Textarea
@@ -227,16 +227,16 @@ export default function CreatorStoreSetupPage() {
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Describe what you sell or the services you offer..."
-                  className="bg-gray-800 border-gray-700 text-white min-h-[100px]"
+                  className="bg-gray-800 border-gray-700 text-white min-h-[60px]"
                 />
               </div>
 
               {/* Contact Information */}
-              <div className="space-y-4">
-                <h3 className="text-white font-medium">Contact Information</h3>
+              <div className="space-y-3">
+                <h3 className="text-white font-medium text-sm">Contact Information</h3>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="address" className="text-white">
+                <div className="space-y-1">
+                  <Label htmlFor="address" className="text-white text-sm">
                     Address
                   </Label>
                   <Input
@@ -248,8 +248,8 @@ export default function CreatorStoreSetupPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white">
+                <div className="space-y-1">
+                  <Label htmlFor="email" className="text-white text-sm">
                     Email
                   </Label>
                   <Input
@@ -262,8 +262,8 @@ export default function CreatorStoreSetupPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone_number" className="text-white">
+                <div className="space-y-1">
+                  <Label htmlFor="phone_number" className="text-white text-sm">
                     Phone Number
                   </Label>
                   <Input
@@ -277,10 +277,10 @@ export default function CreatorStoreSetupPage() {
               </div>
 
               {/* Privacy Settings */}
-              <div className="space-y-4">
-                <h3 className="text-white font-medium">Privacy Settings</h3>
+              <div className="space-y-3">
+                <h3 className="text-white font-medium text-sm">Privacy Settings</h3>
                 
-                <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
                   <div className="flex items-center gap-3">
                     {formData.is_public ? (
                       <Eye className="h-5 w-5 text-green-400" />
@@ -288,8 +288,8 @@ export default function CreatorStoreSetupPage() {
                       <EyeOff className="h-5 w-5 text-gray-400" />
                     )}
                     <div>
-                      <Label className="text-white font-medium">Public Store</Label>
-                      <p className="text-gray-400 text-sm">
+                      <Label className="text-white font-medium text-sm">Public Store</Label>
+                      <p className="text-gray-400 text-xs">
                         Only your name/business name will be visible to the public
                       </p>
                     </div>
@@ -302,15 +302,15 @@ export default function CreatorStoreSetupPage() {
               </div>
 
               {/* Store Status */}
-              <div className="space-y-4">
-                <h3 className="text-white font-medium">Store Status</h3>
+              <div className="space-y-3">
+                <h3 className="text-white font-medium text-sm">Store Status</h3>
                 
-                <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
                   <div className="flex items-center gap-3">
                     <Store className="h-5 w-5 text-teal-400" />
                     <div>
-                      <Label className="text-white font-medium">Open Creator Store</Label>
-                      <p className="text-gray-400 text-sm">
+                      <Label className="text-white font-medium text-sm">Open Creator Store</Label>
+                      <p className="text-gray-400 text-xs">
                         Allow customers to purchase your products and services
                       </p>
                     </div>
@@ -323,7 +323,7 @@ export default function CreatorStoreSetupPage() {
               </div>
 
               {/* Submit Button */}
-              <div className="pt-4">
+              <div className="pt-2">
                 <Button
                   type="submit"
                   disabled={loading || !formData.business_name}

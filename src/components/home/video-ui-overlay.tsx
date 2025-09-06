@@ -72,6 +72,7 @@ export function VideoUIOverlay({
   const [isSaved, setIsSaved] = useState(false);
   const [saveCount, setSaveCount] = useState(parseInt(saves.toString()) || 0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
 
   // Check if user has liked this post, if user is blocked, fetch view count and follower count
   useEffect(() => {
@@ -415,9 +416,14 @@ export function VideoUIOverlay({
         
         <div>
           <p className="text-[10px] leading-relaxed font-medium text-white">
-            {description}
+            {isCaptionExpanded ? description : description.length > 80 ? description.substring(0, 80) + '...' : description}
             {description.length > 80 && (
-              <span className="text-white/70 ml-1">... See More</span>
+              <button 
+                onClick={() => setIsCaptionExpanded(!isCaptionExpanded)}
+                className="text-white/70 ml-1 hover:text-white cursor-pointer"
+              >
+                {isCaptionExpanded ? ' See Less' : ' See More'}
+              </button>
             )}
           </p>
         </div>

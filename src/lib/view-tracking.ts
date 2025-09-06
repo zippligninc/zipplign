@@ -91,12 +91,16 @@ export async function getZippclipViews(zippclipId: string): Promise<ViewTracking
       .single();
 
     if (error) {
-      console.error('Error fetching views:', error);
+      // Only log meaningful errors
+      if (error.message) {
+        console.error('Error fetching views:', error.message);
+      }
       // If views column doesn't exist, return 0 views
-      if (error.message.includes('column "views" does not exist')) {
+      if (error.message && error.message.includes('column "views" does not exist')) {
         return { success: true, data: { views: 0 } };
       }
-      return { success: false, error: error.message };
+      // For any other error, return 0 views gracefully
+      return { success: true, data: { views: 0 } };
     }
 
     return { 

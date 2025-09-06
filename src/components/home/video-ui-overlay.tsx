@@ -113,9 +113,17 @@ export function VideoUIOverlay({
 
         // Fetch current view count
         if (id) {
-          const viewResult = await getZippclipViews(id);
-          if (viewResult.success && viewResult.data) {
-            setViewCount(viewResult.data.views);
+          try {
+            const viewResult = await getZippclipViews(id);
+            if (viewResult.success && viewResult.data) {
+              setViewCount(viewResult.data.views);
+            } else {
+              // If there's an error, set view count to 0
+              setViewCount(0);
+            }
+          } catch (error) {
+            // Silently handle view count errors
+            setViewCount(0);
           }
         }
 
@@ -551,4 +559,5 @@ export function VideoUIOverlay({
     </>
   );
 }
+
 

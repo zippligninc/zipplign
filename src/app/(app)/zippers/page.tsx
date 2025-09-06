@@ -76,7 +76,9 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         setIsPlaying(true);
       } else {
         videoRef.current.pause();
+        videoRef.current.muted = true; // Ensure video is muted when not active
         setIsPlaying(false);
+        setIsMuted(true); // Update mute state
         videoRef.current.currentTime = 0;
       }
     }

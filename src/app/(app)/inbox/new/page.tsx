@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, UserPlus, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, Users, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { toggleFollow } from '@/lib/social-actions';
+import { createDirectConversation } from '@/lib/messaging';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
@@ -16,23 +16,33 @@ interface User {
   username: string;
   full_name: string;
   avatar_url: string | null;
-  bio: string | null;
-  is_following: boolean;
 }
 
-export default function AddFriendsPage() {
+export default function NewMessagePage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [following, setFollowing] = useState<Set<string>>(new Set());
+  const [creating, setCreating] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedUserId = searchParams.get('user');
 
   useEffect(() => {
     checkAuthAndFetchUsers();
   }, []);
+
+  useEffect(() => {
+    // Auto-start conversation if user is preselected
+    if (preselectedUserId && users.length > 0) {
+      const preselectedUser = users.find(user => user.id === preselectedUserId);
+      if (preselectedUser) {
+        handleStartConversation(preselectedUserId);
+      }
+    }
+  }, [preselectedUserId, users]);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -69,19 +79,10 @@ export default function AddFriendsPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Get all users except current user with follow status
+      // Get all users except current user
       const { data: usersData, error } = await supabase
         .from('profiles')
-        .select(`
-          id, 
-          username, 
-          full_name, 
-          avatar_url, 
-          bio,
-          follows!follows_follower_id_fkey (
-            following_id
-          )
-        `)
+        .select('id, username, full_name, avatar_url')
         .neq('id', currentUser?.id)
         .order('full_name');
 
@@ -95,17 +96,8 @@ export default function AddFriendsPage() {
         return;
       }
 
-      const formattedUsers: User[] = (usersData || []).map(user => ({
-        id: user.id,
-        username: user.username,
-        full_name: user.full_name,
-        avatar_url: user.avatar_url,
-        bio: user.bio,
-        is_following: user.follows && user.follows.length > 0
-      }));
-
-      setUsers(formattedUsers);
-      setFilteredUsers(formattedUsers);
+      setUsers(usersData || []);
+      setFilteredUsers(usersData || []);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -113,53 +105,35 @@ export default function AddFriendsPage() {
     }
   };
 
-  const handleFollowToggle = async (userId: string) => {
+  const handleStartConversation = async (userId: string) => {
     if (!currentUser) return;
 
-    setFollowing(prev => new Set(prev).add(userId));
-    
+    setCreating(userId);
     try {
-      const result = await toggleFollow(userId);
-      if (result.success) {
-        // Update the user's follow status
-        setUsers(prev => prev.map(user => 
-          user.id === userId 
-            ? { ...user, is_following: result.data?.following || false }
-            : user
-        ));
-        
+      const result = await createDirectConversation(userId);
+      if (result.success && result.data) {
         toast({
-          title: result.data?.following ? 'Following' : 'Unfollowed',
-          description: result.data?.following 
-            ? 'You are now following this user' 
-            : 'You are no longer following this user',
+          title: 'Conversation Started',
+          description: 'You can now start messaging!',
         });
+        router.push(`/inbox/${result.data.id}`);
       } else {
         toast({
           title: 'Error',
-          description: result.error || 'Failed to update follow status',
+          description: result.error || 'Failed to start conversation',
           variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error('Error toggling follow:', error);
+      console.error('Error starting conversation:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update follow status',
+        description: 'Failed to start conversation',
         variant: 'destructive',
       });
     } finally {
-      setFollowing(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
-      });
+      setCreating(null);
     }
-  };
-
-  const handleMessageUser = (userId: string) => {
-    // Navigate to new message page with pre-selected user
-    router.push(`/inbox/new?user=${userId}`);
   };
 
   return (
@@ -171,7 +145,7 @@ export default function AddFriendsPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <h1 className="text-base font-bold">Find Friends</h1>
+        <h1 className="text-base font-bold">New Message</h1>
         <div className="w-9" /> {/* Spacer for centering */}
       </header>
 
@@ -210,42 +184,20 @@ export default function AddFriendsPage() {
                   <p className="text-sm text-muted-foreground truncate">
                     @{user.username}
                   </p>
-                  {user.bio && (
-                    <p className="text-xs text-muted-foreground truncate mt-1">
-                      {user.bio}
-                    </p>
-                  )}
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleMessageUser(user.id)}
-                    className="rounded-full"
-                  >
-                    Message
-                  </Button>
-                  
-                  <Button
-                    size="sm"
-                    variant={user.is_following ? "secondary" : "default"}
-                    onClick={() => handleFollowToggle(user.id)}
-                    disabled={following.has(user.id)}
-                    className="rounded-full"
-                  >
-                    {following.has(user.id) ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : user.is_following ? (
-                      'Following'
-                    ) : (
-                      <>
-                        <UserPlus className="h-4 w-4 mr-1" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleStartConversation(user.id)}
+                  disabled={creating === user.id}
+                  className="rounded-full"
+                >
+                  {creating === user.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Message'
+                  )}
+                </Button>
               </div>
             ))
           ) : (
@@ -257,7 +209,7 @@ export default function AddFriendsPage() {
               <p className="text-muted-foreground">
                 {searchQuery 
                   ? 'Try searching with a different name or username'
-                  : 'There are no other users to follow yet'
+                  : 'There are no other users to message yet'
                 }
               </p>
             </div>

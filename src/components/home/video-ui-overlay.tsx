@@ -516,22 +516,32 @@ export function VideoUIOverlay({
         </div>
         
         <div>
-          <p className="text-[10px] leading-relaxed font-medium text-white">
-            {isCaptionExpanded ? description : description.length > 80 ? description.substring(0, 80) + '...' : description}
-            {description.length > 80 && (
-              <button 
-                onClick={() => setIsCaptionExpanded(!isCaptionExpanded)}
-                className="text-white/70 ml-1 hover:text-white cursor-pointer"
-              >
-                {isCaptionExpanded ? ' See Less' : ' See More'}
-              </button>
-            )}
-          </p>
+          <Link href={`/post/${id}`}>
+            <p className="text-[10px] leading-relaxed font-medium text-white cursor-pointer hover:text-white/80">
+              {isCaptionExpanded ? description : description.length > 80 ? description.substring(0, 80) + '...' : description}
+              {description.length > 80 && (
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsCaptionExpanded(!isCaptionExpanded);
+                  }}
+                  className="text-white/70 ml-1 hover:text-white cursor-pointer"
+                >
+                  {isCaptionExpanded ? ' See Less' : ' See More'}
+                </button>
+              )}
+            </p>
+          </Link>
         </div>
         
         <div className="flex items-center gap-2">
-          <Music className="h-4 w-4 text-teal-400" />
-          <p className="text-xs font-medium truncate text-white">{song}</p>
+          <Link href={`/post/${id}`}>
+            <div className="flex items-center gap-2 cursor-pointer hover:opacity-80">
+              <Music className="h-4 w-4 text-teal-400" />
+              <p className="text-xs font-medium truncate text-white">{song}</p>
+            </div>
+          </Link>
           {song && song.trim() !== '' && (
             <div className="flex items-center gap-1 ml-1">
               <Button
@@ -658,6 +668,7 @@ export function VideoUIOverlay({
           )}
         </div>
       </div>
+      </div>
 
       {/* Comments Modal */}
       <CommentsModal
@@ -700,7 +711,6 @@ export function VideoUIOverlay({
           )}
         </audio>
       )}
-    </div>
     </>
   );
 }

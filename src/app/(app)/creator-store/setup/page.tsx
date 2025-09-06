@@ -141,7 +141,7 @@ export default function CreatorStoreSetupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="h-full bg-black text-white overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-gray-800">
         <div className="flex items-center justify-between p-4">
@@ -162,7 +162,7 @@ export default function CreatorStoreSetupPage() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto p-6">
+      <div className="max-w-2xl mx-auto p-6 pb-20">
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">

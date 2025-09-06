@@ -211,32 +211,84 @@ export default function ProfilePage() {
   const handleCoverFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
-    
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-    const filePath = `covers/${fileName}`;
 
-    let { error: uploadError } = await supabase.storage.from('zippclips').upload(filePath, file);
-
-    if (uploadError) {
-      toast({ title: 'Error uploading cover photo', description: uploadError.message, variant: 'destructive' });
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({ 
+        title: 'Invalid file type', 
+        description: 'Please select an image file (JPG, PNG, GIF, etc.)', 
+        variant: 'destructive' 
+      });
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage.from('zippclips').getPublicUrl(filePath);
+    // Validate file size (max 10MB for cover photos)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ 
+        title: 'File too large', 
+        description: 'Please select an image smaller than 10MB', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+    const filePath = `covers/${user.id}/${fileName}`; // Fixed: Add user folder structure
 
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ cover_url: publicUrl })
-      .eq('id', user.id);
+    try {
+      // Delete old cover photo if it exists
+      if (profile?.cover_url) {
+        const oldPath = profile.cover_url.split('/').slice(-2).join('/'); // Extract path from URL
+        await supabase.storage.from('zippclips').remove([oldPath]);
+      }
 
-    if (updateError) {
-       toast({ title: 'Error updating cover photo', description: updateError.message, variant: 'destructive' });
-    } else {
-      setProfile(prev => prev ? { ...prev, cover_url: publicUrl } : null);
-      toast({
-        title: "Cover Photo Updated",
-        description: "Your new cover photo is now being displayed.",
+      const { error: uploadError } = await supabase.storage
+        .from('zippclips')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Allow overwriting
+        });
+
+      if (uploadError) {
+        console.error('Cover upload error:', uploadError);
+        toast({ 
+          title: 'Error uploading cover photo', 
+          description: uploadError.message, 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('zippclips')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ cover_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Cover update error:', updateError);
+        toast({ 
+          title: 'Error updating cover photo', 
+          description: updateError.message, 
+          variant: 'destructive' 
+        });
+      } else {
+        setProfile(prev => prev ? { ...prev, cover_url: publicUrl } : null);
+        toast({
+          title: "Cover Photo Updated",
+          description: "Your new cover photo is now being displayed.",
+        });
+      }
+    } catch (error: any) {
+      console.error('Cover photo upload error:', error);
+      toast({ 
+        title: 'Upload failed', 
+        description: error.message || 'Failed to upload cover photo', 
+        variant: 'destructive' 
       });
     }
   };

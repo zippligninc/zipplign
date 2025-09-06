@@ -74,20 +74,71 @@ export default function EditProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    let { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
-
-    if (uploadError) {
-      toast({ title: 'Error uploading avatar', description: uploadError.message, variant: 'destructive' });
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({ 
+        title: 'Invalid file type', 
+        description: 'Please select an image file (JPG, PNG, GIF, etc.)', 
+        variant: 'destructive' 
+      });
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
-    setAvatarUrl(publicUrl);
-    toast({ title: 'Avatar updated!', description: 'Save your profile to make it permanent.' });
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ 
+        title: 'File too large', 
+        description: 'Please select an image smaller than 5MB', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`; // Fixed: Add user folder structure
+
+    try {
+      // Delete old avatar if it exists
+      if (avatarUrl) {
+        const oldPath = avatarUrl.split('/').slice(-2).join('/'); // Extract path from URL
+        await supabase.storage.from('avatars').remove([oldPath]);
+      }
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Allow overwriting
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast({ 
+          title: 'Error uploading avatar', 
+          description: uploadError.message, 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+      
+      setAvatarUrl(publicUrl);
+      toast({ 
+        title: 'Avatar updated!', 
+        description: 'Save your profile to make it permanent.' 
+      });
+    } catch (error: any) {
+      console.error('Avatar upload error:', error);
+      toast({ 
+        title: 'Upload failed', 
+        description: error.message || 'Failed to upload avatar', 
+        variant: 'destructive' 
+      });
+    }
   };
 
   const handleSave = async () => {

@@ -10,12 +10,7 @@ import { LogoLarge } from '@/components/common/logo';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useTouchGestures, useHapticFeedback, useDeviceCapabilities } from '@/hooks/use-touch-gestures';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from '@/components/ui/carousel';
+// Using scroll snap instead of carousel for better video control
 import { VideoUIOverlay } from '@/components/home/video-ui-overlay';
 import { LazyMedia } from '@/components/optimized/lazy-media';
 import { LoadingOverlay } from '@/components/ui/loading-states';
@@ -262,9 +257,7 @@ export default function ZippersPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<Error | null>(null);
 
-  // Carousel will handle navigation
-
-  // Carousel API will handle current index tracking
+  // Scroll snap will handle navigation
 
   const fetchFollowingZippclips = async () => {
     if (!supabase) {
@@ -378,22 +371,24 @@ export default function ZippersPage() {
     }
   };
 
-  // Carousel API effect
+  // Track current video index for scroll snap
   React.useEffect(() => {
-    if (!api) {
-      return
-    }
- 
-    setCurrent(api.selectedScrollSnap())
- 
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap())
-      // Haptic feedback when scrolling on mobile
-      if (isMobile) {
-        triggerHaptic('light');
+    const handleScroll = () => {
+      const scrollContainer = document.querySelector('.snap-y');
+      if (scrollContainer) {
+        const scrollTop = scrollContainer.scrollTop;
+        const itemHeight = window.innerHeight;
+        const currentIndex = Math.round(scrollTop / itemHeight);
+        setCurrent(currentIndex);
       }
-    })
-  }, [api, isMobile, triggerHaptic])
+    };
+
+    const scrollContainer = document.querySelector('.snap-y');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [zippclips.length]);
 
   // Fetch zippclips on mount
   useEffect(() => {
@@ -497,25 +492,16 @@ export default function ZippersPage() {
       <ZippersHeader />
       
       <ErrorBoundary>
-        <Carousel
-          setApi={setApi}
-          className="h-full w-full"
-          opts={{
-            align: "start",
-            loop: false,
-          }}
-        >
-          <CarouselContent className="h-full">
-            {zippclips.map((clip, index) => (
-              <CarouselItem key={clip.id} className="h-full">
-                <MediaPlayer 
-                  clip={clip} 
-                  isActive={index === current}
-                />
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+        <div className="h-full w-full overflow-y-auto snap-y snap-mandatory">
+          {zippclips.map((clip, index) => (
+            <div key={clip.id} className="h-full w-full snap-start">
+              <MediaPlayer 
+                clip={clip} 
+                isActive={index === current}
+              />
+            </div>
+          ))}
+        </div>
       </ErrorBoundary>
     </div>
   );

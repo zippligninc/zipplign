@@ -24,9 +24,9 @@ export default function AddMusicPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="h-screen bg-black text-white flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-black flex items-center justify-between p-3 sm:p-4 border-b border-gray-800">
+      <header className="flex-shrink-0 bg-black flex items-center justify-between p-3 sm:p-4 border-b border-gray-800">
         <div className="flex items-center gap-2 sm:gap-4">
           <Button
             variant="ghost"
@@ -47,8 +47,8 @@ export default function AddMusicPage() {
         )}
       </header>
 
-      {/* Music Browser */}
-      <div className="p-2 sm:p-4 pb-20">
+      {/* Music Browser - Scrollable */}
+      <div className="flex-1 overflow-y-auto p-2 sm:p-4 pb-20">
         <SimpleMusicBrowser
           onTrackSelect={handleTrackSelect}
           selectedTrack={selectedTrack}
@@ -56,7 +56,7 @@ export default function AddMusicPage() {
       </div>
 
       {/* Bottom Actions - Fixed */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 p-2 sm:p-4 z-10">
+      <div className="flex-shrink-0 bg-black border-t border-gray-800 p-2 sm:p-4">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <Button
             variant="outline"

@@ -389,118 +389,140 @@ export function VideoUIOverlay({
         </div>
       </div>
 
-      {/* Bottom Menu Bar - 3 Column Layout */}
-      <div className="absolute bottom-[4rem] left-0 right-0 flex items-center justify-between p-4 pb-4 text-white z-10 sm:bottom-20 md:bottom-12">
-        
-        {/* Left Column (40%) - User Information */}
-        <div className="flex-1 max-w-[40%] space-y-1">
-          <div className="flex items-center gap-2">
+      {/* Main Overlay - Bottom */}
+      <div className="absolute bottom-[4rem] left-0 right-0 flex items-end justify-between p-4 pb-4 text-white z-10 sm:bottom-20 md:bottom-12">
+      {/* Left Side - User Info and Content */}
+      <div className="flex-1 max-w-[75%] space-y-3">
+        <div className="flex items-center gap-3">
+          <Link href={`/user/${user.username}`}>
+            <Avatar className="h-10 w-10 border-2 border-white/90 shadow-lg">
+              <AvatarImage 
+                src={user.avatar_url && user.avatar_url.trim() !== '' ? user.avatar_url : undefined} 
+                alt={user.full_name} 
+              />
+              <AvatarFallback className="bg-gradient-to-br from-teal-500 to-green-500 text-white font-bold text-sm">
+                {user.full_name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+          <div>
             <Link href={`/user/${user.username}`}>
-              <Avatar className="h-8 w-8 border border-white/50">
-                <AvatarImage 
-                  src={user.avatar_url && user.avatar_url.trim() !== '' ? user.avatar_url : undefined} 
-                  alt={user.full_name} 
-                />
-                <AvatarFallback className="bg-gradient-to-br from-teal-500 to-green-500 text-white font-bold text-xs">
-                  {user.full_name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+                <p className="font-bold text-sm text-white">{user.full_name}</p>
+                <p className="text-xs text-white/80">@{user.username}</p>
             </Link>
-            <div className="flex-1 min-w-0">
-              <Link href={`/user/${user.username}`}>
-                <p className="font-bold text-sm text-white truncate">{user.full_name}</p>
-                <p className="text-xs text-white/70 truncate">@{user.username}</p>
-              </Link>
-            </div>
           </div>
-          
-          {/* Bio - Truncated */}
-          <p className="text-xs text-white/80 leading-tight">
-            {description.length > 40 ? `${description.substring(0, 40)}...` : description}
+        </div>
+        
+        <div>
+          <p className="text-sm leading-relaxed font-medium text-white">
+            {description}
+            {description.length > 80 && (
+              <span className="text-white/70 ml-1">... See More</span>
+            )}
           </p>
-          
-          {/* Song Info */}
-          <div className="flex items-center gap-1">
-            <Music className="h-3 w-3 text-teal-400" />
-            <p className="text-xs text-white/70 italic truncate">{song}</p>
-          </div>
         </div>
-
-        {/* Center Column (20%) - Navigation Icons */}
-        <div className="flex items-center justify-center px-8">
-          {/* This space is reserved for the global navigation icons */}
-          {/* The actual navigation is handled by the BottomNav component */}
+        
+        <div className="flex items-center gap-2">
+          <Music className="h-4 w-4 text-teal-400" />
+          <p className="text-xs font-medium truncate text-white">{song}</p>
         </div>
+        
+        {/* View Count Display */}
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
+          <p className="text-xs text-white/90 font-medium">
+            {formatViewCount(viewCount)} views
+          </p>
+        </div>
+      </div>
 
-        {/* Right Column (40%) - Social Actions */}
-        <div className="flex-1 max-w-[40%] flex items-center justify-end gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full" 
-            onClick={handleLike}
-            disabled={isLiking}
-          >
-            <Heart className={`h-6 w-6 ${isLiked ? 'fill-red-500 text-red-500' : 'fill-white'}`} />
-            <span className="text-xs font-bold">{likeCount}</span>
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full" 
-            onClick={handleComment}
-          >
-            <MessageCircle className="h-6 w-6 fill-white" />
-            <span className="text-xs font-bold">{commentCount}</span>
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full" 
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            <Bookmark className={`h-6 w-6 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
-            <span className="text-xs font-bold">{saveCount}</span>
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full" 
-            onClick={handleShare}
-          >
-            <Send className="h-6 w-6 fill-white" />
-            <span className="text-xs font-bold">{shares}</span>
-          </Button>
+      {/* Right Side - Social Actions */}
+      <div className="flex flex-col items-center space-y-2">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
+          onClick={handleLike}
+          disabled={isLiking}
+        >
+          <Heart className={`h-7 w-7 ${isLiked ? 'fill-red-500 text-red-500' : 'fill-white'}`} />
+          <span className="text-sm font-bold">{likeCount}</span>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
+          onClick={handleComment}
+        >
+          <MessageCircle className="h-7 w-7 fill-white" />
+          <span className="text-sm font-bold">{commentCount}</span>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
+          onClick={handleSave}
+          disabled={isSaving}
+        >
+          <Bookmark className={`h-7 w-7 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
+          <span className="text-sm font-bold">{saveCount}</span>
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
+          onClick={handleShare}
+        >
+          <Send className="h-7 w-7 fill-white" />
+          <span className="text-sm font-bold">{shares}</span>
+        </Button>
 
-          {/* More Options */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-auto w-auto flex items-center gap-2 p-2 text-white hover:bg-white/10 rounded-full"
-              >
-                <MoreHorizontal className="h-6 w-6 fill-white" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={handleReportContent} className="text-red-600">
-                <Flag className="mr-2 h-4 w-4" />
-                Report
+
+        {/* More Options */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full"
+            >
+              <MoreHorizontal className="h-7 w-7 fill-white" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={handleReportContent} className="text-red-600">
+              <Flag className="mr-2 h-4 w-4" />
+              Report
+            </DropdownMenuItem>
+            {!isUserBlocked && (
+              <DropdownMenuItem onClick={handleBlockUser} className="text-red-600">
+                <UserX className="mr-2 h-4 w-4" />
+                Block @{user.username}
               </DropdownMenuItem>
-              {!isUserBlocked && (
-                <DropdownMenuItem onClick={handleBlockUser} className="text-red-600">
-                  <UserX className="mr-2 h-4 w-4" />
-                  Block @{user.username}
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Song Avatar */}
+        <div className="animate-spin-slow">
+          {song_avatar_url && song_avatar_url.trim() !== '' ? (
+            <Image 
+                src={song_avatar_url}
+                alt="Song avatar"
+              width={24}
+              height={24}
+              className="rounded-full border-2 border-white"
+            />
+          ) : (
+            <div className="w-6 h-6 rounded-full border-2 border-white bg-gray-700 flex items-center justify-center">
+              <Music className="h-3 w-3 text-gray-400" />
+            </div>
+          )}
         </div>
+      </div>
 
       {/* Comments Modal */}
       <CommentsModal
@@ -519,7 +541,7 @@ export function VideoUIOverlay({
         contentId={id}
         contentDescription={description}
       />
-      </div>
+    </div>
     </>
   );
 }

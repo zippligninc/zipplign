@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, ShoppingBag, User } from 'lucide-react';
+import { Home, Search, MessageCircle, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LogoCreateButton } from './logo';
 import { useState, useEffect } from 'react';
@@ -14,7 +14,7 @@ const navItems = [
   { href: '/home', icon: Home, label: 'For You' },
   { href: '/zippers', icon: Search, label: 'Zippers' },
   { href: '/create', icon: LogoCreateButton, label: 'Create', isCreate: true },
-  { href: '/store', icon: ShoppingBag, label: 'Store' },
+  { href: '/inbox', icon: MessageCircle, label: 'Inbox' },
   { href: '/profile', icon: User, label: 'Profile' },
 ];
 
@@ -67,12 +67,12 @@ export function BottomNav() {
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-t-emerald-800 bg-gradient-to-r from-green-600 to-teal-600/90 backdrop-blur-sm">
-      <nav className="flex h-16 items-center justify-center px-16">
+      <nav className="flex h-16 items-center justify-around px-1">
         {navItems.map((item) => {
           let href = item.href;
           const isActive = pathname === href;
 
-          const isProtected = item.isCreate || item.href === '/store' || item.href === '/profile';
+          const isProtected = item.isCreate || item.href === '/inbox' || item.href === '/profile';
 
           return (
             <Link
@@ -98,7 +98,7 @@ export function BottomNav() {
                 }
               }}
               className={cn(
-                'flex flex-col items-center justify-center h-full w-12 gap-0 p-0.5 text-white/80 transition-colors hover:text-white',
+                'flex flex-col items-center justify-center h-full w-10 gap-0 p-0.5 text-white/80 transition-colors hover:text-white',
                 isActive && !item.isCreate && 'text-white'
               )}
             >

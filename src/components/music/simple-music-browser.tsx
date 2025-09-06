@@ -166,7 +166,7 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
                 }}
               >
                 <CardContent className="p-4">
-                  <div className="aspect-square bg-gradient-to-br from-teal-500 to-purple-600 rounded-lg mb-3 flex items-center justify-center">
+                  <div className="aspect-square bg-gradient-to-br from-teal-500 to-purple-600 mb-3 flex items-center justify-center">
                     <Music className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="font-medium text-sm">{category.name}</h3>
@@ -197,14 +197,14 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
 
       {/* Audio Controls */}
       {playingTrack && (
-        <div className="fixed bottom-20 left-2 right-2 sm:left-4 sm:right-4 bg-black/90 backdrop-blur-sm rounded-lg p-3 sm:p-4 z-50">
+        <div className="fixed bottom-20 left-2 right-2 sm:left-4 sm:right-4 bg-black/90 backdrop-blur-sm p-3 sm:p-4 z-50">
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 relative flex-shrink-0">
               <Image
                 src={playingTrack.image_url}
                 alt={playingTrack.album}
                 fill
-                className="object-cover rounded-lg"
+                className="object-cover"
               />
             </div>
             
@@ -276,7 +276,7 @@ function TrackCard({
               src={track.image_url}
               alt={track.album}
               fill
-              className="object-cover rounded-lg"
+              className="object-cover"
             />
           </div>
           

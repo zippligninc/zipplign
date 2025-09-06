@@ -165,7 +165,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         <div className="relative w-full h-full">
           <video
             ref={videoRef}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             loop
             muted={isMuted}
             playsInline
@@ -195,7 +195,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
           type="image"
           width={400}
           height={600}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
         />
       )}
 

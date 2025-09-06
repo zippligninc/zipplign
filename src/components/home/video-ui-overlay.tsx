@@ -542,7 +542,7 @@ export function VideoUIOverlay({
               <p className="text-xs font-medium truncate text-white">{song}</p>
             </div>
           </Link>
-          {song && song.trim() !== '' && (
+          {spotify_preview_url && (
             <div className="flex items-center gap-1 ml-1">
               <Button
                 variant="ghost"
@@ -688,8 +688,8 @@ export function VideoUIOverlay({
         contentDescription={description}
       />
 
-      {/* Audio Element for Music */}
-      {(song && song.trim() !== '') && (
+      {/* Audio Element for Music - Only render if we have a valid audio URL */}
+      {spotify_preview_url && (
         <audio
           ref={audioRef}
           loop
@@ -700,15 +700,7 @@ export function VideoUIOverlay({
           onPause={() => setIsAudioPlaying(false)}
           onPlay={() => setIsAudioPlaying(true)}
         >
-          {spotify_preview_url ? (
-            <source src={spotify_preview_url} type="audio/mpeg" />
-          ) : (
-            <>
-              <source src={song} type="audio/mpeg" />
-              <source src={song} type="audio/wav" />
-              <source src={song} type="audio/ogg" />
-            </>
-          )}
+          <source src={spotify_preview_url} type="audio/mpeg" />
         </audio>
       )}
     </>

@@ -163,7 +163,7 @@ export default function AddFriendsPage() {
   };
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto pb-20">
+    <div className="flex h-full flex-col overflow-y-auto">
       {/* Header */}
       <header className="flex items-center justify-between p-3 sticky top-0 bg-background z-10 border-b">
         <Link href="/inbox">

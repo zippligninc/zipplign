@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PenSquare, UserPlus, Plus, Loader2, PlayCircle } from 'lucide-react';
+import { PenSquare, UserPlus, Plus, Loader2, PlayCircle, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -302,7 +302,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-background text-foreground pb-20">
+    <div className="h-full overflow-y-auto bg-background text-foreground">
         <div className="relative h-20 w-full">
           <Image
               src={profile?.cover_url || "https://picsum.photos/seed/cover-profile/800/200"}
@@ -312,7 +312,7 @@ export default function ProfilePage() {
               data-ai-hint="group friends outdoors"
           />
             <div className="absolute inset-0 bg-black/40" />
-            <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-end p-2 text-white">
+            <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-end gap-2 p-2 text-white">
                 <input
                     type="file"
                     ref={coverFileInputRef}
@@ -321,6 +321,11 @@ export default function ProfilePage() {
                     accept="image/*"
                     disabled={!profile}
                 />
+                <Button asChild variant="ghost" size="icon" className="h-7 w-7">
+                  <Link href="/settings">
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCoverEditClick} disabled={!profile}>
                     <PenSquare className="h-4 w-4" />
                 </Button>

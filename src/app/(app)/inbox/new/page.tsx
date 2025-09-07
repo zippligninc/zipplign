@@ -79,15 +79,19 @@ function NewMessageContent() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      // Read current user directly to avoid state timing issues
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentId = user?.id || '';
+
       // Get all users except current user
       const { data: usersData, error } = await supabase
         .from('profiles')
         .select('id, username, full_name, avatar_url')
-        .neq('id', currentUser?.id)
+        .neq('id', currentId)
         .order('full_name');
 
       if (error) {
-        console.error('Error fetching users:', error);
+        console.error('Error fetching users:', (error as any)?.message || error);
         toast({
           title: 'Error',
           description: 'Failed to load users',
@@ -99,7 +103,7 @@ function NewMessageContent() {
       setUsers(usersData || []);
       setFilteredUsers(usersData || []);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching users:', (error as any)?.message || error);
     } finally {
       setLoading(false);
     }
@@ -137,7 +141,7 @@ function NewMessageContent() {
   };
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto pb-20">
+    <div className="flex h-full flex-col overflow-y-auto">
       {/* Header */}
       <header className="flex items-center justify-between p-3 sticky top-0 bg-background z-10 border-b">
         <Link href="/inbox">

@@ -285,7 +285,7 @@ export default function CreatorStoreSetupPage() {
         </div>
       </header>
 
-      <div className="max-w-xl mx-auto p-4 pb-20">
+      <div className="max-w-xl mx-auto p-4">
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-white text-lg">

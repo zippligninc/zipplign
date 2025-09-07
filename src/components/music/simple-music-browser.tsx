@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,13 +33,32 @@ interface SimpleMusicBrowserProps {
 export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusicBrowserProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SimpleTrack[]>([]);
+  const [localTracks, setLocalTracks] = useState<SimpleTrack[]>([]);
   const [playingTrack, setPlayingTrack] = useState<SimpleTrack | null>(null);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [oscillator, setOscillator] = useState<OscillatorNode | null>(null);
+  const [gainNode, setGainNode] = useState<GainNode | null>(null);
+
+  useEffect(() => {
+    // Load local tracks from API
+    fetch('/api/local-music')
+      .then(res => res.json())
+      .then(data => setLocalTracks(data.tracks || []))
+      .catch(() => setLocalTracks([]));
+  }, []);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    const results = searchMusic(query);
+    const base = localTracks.length ? localTracks : searchMusic('');
+    const results = !query.trim()
+      ? base
+      : base.filter(t =>
+          t.name.toLowerCase().includes(query.toLowerCase()) ||
+          t.artist.toLowerCase().includes(query.toLowerCase()) ||
+          t.album.toLowerCase().includes(query.toLowerCase())
+        );
     setSearchResults(results);
   };
 
@@ -55,8 +74,31 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
     // Create new audio element
     const audio = new Audio(track.preview_url);
     audio.muted = isMuted;
-    audio.play().catch(error => {
-      console.warn('Preview play failed:', error);
+    audio.play().catch(async error => {
+      console.info('Preview source unsupported, using tone fallback.');
+      // Fallback: use Web Audio API to play a short tone so user hears feedback
+      try {
+        const ctx = audioContext || new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (!audioContext) setAudioContext(ctx);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 440; // A4 tone
+        gain.gain.value = isMuted ? 0 : 0.05; // low volume
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        setOscillator(osc);
+        setGainNode(gain);
+        // Stop after 1 second
+        setTimeout(() => {
+          try { osc.stop(); } catch {}
+          setOscillator(null);
+          setGainNode(null);
+        }, 1000);
+      } catch (e) {
+        console.warn('WebAudio fallback failed:', e);
+      }
     });
     
     setAudioRef(audio);
@@ -74,6 +116,10 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
       audioRef.pause();
       audioRef.currentTime = 0;
     }
+    if (oscillator) {
+      try { oscillator.stop(); } catch {}
+      setOscillator(null);
+    }
     setPlayingTrack(null);
   };
 
@@ -81,6 +127,9 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
     if (audioRef) {
       audioRef.muted = !isMuted;
       setIsMuted(!isMuted);
+    }
+    if (gainNode) {
+      gainNode.gain.value = !isMuted ? 0 : 0.05;
     }
   };
 
@@ -116,7 +165,7 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
         {/* Trending Music */}
         <TabsContent value="trending" className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {getTrendingMusic().map((track) => (
+            {(localTracks.length ? localTracks : getTrendingMusic()).map((track) => (
               <TrackCard
                 key={track.id}
                 track={track}
@@ -180,7 +229,7 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
         {/* All Music */}
         <TabsContent value="all" className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {getMusicByCategory('all').map((track) => (
+            {(localTracks.length ? localTracks : getMusicByCategory('all')).map((track) => (
               <TrackCard
                 key={track.id}
                 track={track}
@@ -204,6 +253,7 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
                 src={playingTrack.image_url}
                 alt={playingTrack.album}
                 fill
+                sizes="(max-width: 640px) 40px, (max-width: 768px) 48px, 48px"
                 className="object-cover"
               />
             </div>
@@ -276,6 +326,7 @@ function TrackCard({
               src={track.image_url}
               alt={track.album}
               fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
               className="object-cover"
             />
           </div>

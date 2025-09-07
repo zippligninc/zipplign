@@ -81,7 +81,7 @@ export function VideoUIOverlay({
   // Audio state
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [isAudioMuted, setIsAudioMuted] = useState(true);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [audioError, setAudioError] = useState(false);
 
   // Check if user has liked this post, if user is blocked, fetch view count and follower count
@@ -171,7 +171,7 @@ export function VideoUIOverlay({
             // Fetch save count
             const saveCountResult = await getSaveCount(id);
             if (saveCountResult.success && saveCountResult.data) {
-              setSaveCount(saveCountResult.data.saves);
+              setSaveCount(saveCountResult.data.count);
             }
           } catch (error) {
             console.error('Error fetching social action counts:', error);
@@ -447,9 +447,16 @@ export function VideoUIOverlay({
         description: result.error || 'Failed to update save status',
         variant: 'destructive',
       });
-    } else if (result.data) {
-      // Update with actual count from server
-      setSaveCount(result.data.saves);
+    } else {
+      // Refresh the real save count
+      try {
+        const saveCountResult = await getSaveCount(id);
+        if (saveCountResult.success && saveCountResult.data) {
+          setSaveCount(saveCountResult.data.count);
+        }
+      } catch (error) {
+        console.error('Error refreshing save count:', error);
+      }
     }
     
     setIsSaving(false);
@@ -492,7 +499,7 @@ export function VideoUIOverlay({
       </div>
 
       {/* Main Overlay - Bottom */}
-      <div className="absolute bottom-[1rem] left-0 right-0 flex items-end justify-between p-4 pb-0 text-white z-10 sm:bottom-4 md:bottom-2">
+      <div className="absolute bottom-[4.5rem] left-0 right-0 flex items-end justify-between p-4 pb-0 text-white z-10 sm:bottom-[4.5rem] md:bottom-[4.5rem]">
       {/* Left Side - User Info and Content */}
       <div className="flex-1 max-w-[75%] space-y-3">
         <div className="flex items-center gap-3">
@@ -613,6 +620,20 @@ export function VideoUIOverlay({
         >
           <Bookmark className={`h-7 w-7 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
           <span className="text-sm font-bold">{saveCount}</span>
+        </Button>
+
+        {/* Ride My Zipp */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full"
+          onClick={() => {
+            sessionStorage.setItem('zipp_reference', JSON.stringify({ id, user: user.username, description, song }));
+            window.location.href = '/create';
+          }}
+        >
+          <Zap className="h-7 w-7 fill-white" />
+          <span className="text-sm font-bold">Ride</span>
         </Button>
         
         <Button 

@@ -51,7 +51,7 @@ export default function EventsPage() {
     <div className="h-screen bg-black text-white overflow-hidden">
       <EventsHeader />
       
-      <div className="h-full pt-16 pb-24 flex flex-col items-center justify-center">
+      <div className="h-full pt-16 flex flex-col items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="mb-8">
             <LogoLarge className="w-20 h-20 mx-auto mb-6" />

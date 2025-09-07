@@ -19,6 +19,15 @@ import { ErrorBoundary } from '@/components/error/error-boundary';
 import { PerformanceOptimizer } from '@/lib/performance';
 import { sampleZippclips } from '@/lib/sample-content';
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 type Profile = {
   username: string;
   full_name: string;
@@ -47,14 +56,14 @@ const navItems = [
     { href: '/live', label: 'Live' },
 ];
 
-const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) => {
+const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: boolean; onEnded?: () => void }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [hasError, setHasError] = useState(false);
   const { triggerHaptic } = useHapticFeedback();
   const { isMobile } = useDeviceCapabilities();
+  const [soundEnabled, setSoundEnabled] = useState(false);
   
   // Handle case where profiles might be null
   const user = clip.profiles || {
@@ -66,20 +75,54 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
   useEffect(() => {
     if (clip.media_type === 'video' && videoRef.current) {
       if (isActive) {
+        // Apply sound state
+        videoRef.current.muted = !soundEnabled;
         videoRef.current.play().catch(error => {
           console.warn("Autoplay prevented: ", error);
           setIsPlaying(false);
         });
         setIsPlaying(true);
       } else {
+        // Ensure inactive videos stop audio immediately
         videoRef.current.pause();
-        videoRef.current.muted = true; // Ensure video is muted when not active
+        videoRef.current.muted = true;
         setIsPlaying(false);
-        setIsMuted(true); // Update mute state
         videoRef.current.currentTime = 0;
       }
     }
-  }, [isActive, clip.media_type]);
+  }, [isActive, clip.media_type, soundEnabled]);
+
+  // Extra safety: pause and mute on unmount to avoid lingering audio
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+          videoRef.current.muted = true;
+        } catch {}
+      }
+    };
+  }, []);
+
+  // One-time unlock of sound on first user gesture
+  useEffect(() => {
+    const stored = sessionStorage.getItem('sound_enabled');
+    if (stored === '1') setSoundEnabled(true);
+
+    const unlock = () => {
+      sessionStorage.setItem('sound_enabled', '1');
+      setSoundEnabled(true);
+      if (videoRef.current) {
+        videoRef.current.muted = false;
+        videoRef.current.play().catch(() => {});
+      }
+      window.removeEventListener('pointerdown', unlock);
+    };
+    if (!stored) {
+      window.addEventListener('pointerdown', unlock, { once: true });
+    }
+    return () => window.removeEventListener('pointerdown', unlock);
+  }, []);
 
   const handleVideoError = () => {
     console.error('Video failed to load:', clip.media_url);
@@ -103,14 +146,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
   };
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-      // Haptic feedback on mobile
-      if (isMobile) {
-        triggerHaptic('light');
-      }
-    }
+    // Mute control removed by request
   };
 
   const handleTouchStart = () => {
@@ -164,26 +200,17 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
             ref={videoRef}
             className="w-full h-full object-contain"
             loop
-            muted={isMuted}
+            muted={!soundEnabled}
             playsInline
             onError={handleVideoError}
+            onEnded={() => {
+              if (onEnded) onEnded();
+            }}
           >
             <source src={clip.media_url} type="video/mp4" />
           </video>
           
-          {/* Mute Button - Layered directly on video */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-2 right-2 h-10 w-10 rounded-full bg-black/80 hover:bg-black/90 z-50 border border-white/20"
-            onClick={toggleMute}
-          >
-            {isMuted ? (
-              <VolumeX className="h-5 w-5 text-white" />
-            ) : (
-              <Volume2 className="h-5 w-5 text-white" />
-            )}
-          </Button>
+          {/* Mute button removed */}
         </div>
       ) : (
         <LazyMedia
@@ -227,6 +254,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         song_avatar_url={clip.song_avatar_url}
         media_url={clip.media_url}
         media_type={clip.media_type}
+        spotify_preview_url={clip.spotify_preview_url}
       />
     </div>
   );
@@ -276,6 +304,9 @@ export default function HomePage() {
   const [zippclips, setZippclips] = useState<Zippclip[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<Error | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+  const PULL_THRESHOLD = 70;
 
   const fetchZippclips = React.useCallback(async () => {
     if (!supabase) {
@@ -333,9 +364,9 @@ export default function HomePage() {
       // Use sample data if no clips found in database
       if (formattedClips.length === 0) {
         console.log('No clips found in database, using sample data');
-        setZippclips(sampleZippclips);
+        setZippclips(shuffleArray(sampleZippclips));
       } else {
-        setZippclips(formattedClips);
+        setZippclips(shuffleArray(formattedClips));
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error');
@@ -343,7 +374,7 @@ export default function HomePage() {
       console.error('Error fetching zippclips:', error);
       // Use sample data as fallback
       console.log('Using sample data as fallback');
-      setZippclips(sampleZippclips);
+      setZippclips(shuffleArray(sampleZippclips));
     } finally {
       setLoading(false);
     }
@@ -353,6 +384,48 @@ export default function HomePage() {
   React.useEffect(() => {
     fetchZippclips();
   }, [fetchZippclips]);
+
+  // Pull-to-refresh (swipe down at top)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let startY = 0;
+    let pulling = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (el.scrollTop <= 0) {
+        startY = e.touches[0].clientY;
+        pulling = true;
+        setPullDistance(0);
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!pulling) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy > 0) {
+        e.preventDefault();
+        setPullDistance(Math.min(dy, 120));
+      } else {
+        setPullDistance(0);
+      }
+    };
+    const onTouchEnd = async () => {
+      if (pullDistance >= PULL_THRESHOLD) {
+        await fetchZippclips();
+      }
+      setPullDistance(0);
+      pulling = false;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart as any);
+      el.removeEventListener('touchmove', onTouchMove as any);
+      el.removeEventListener('touchend', onTouchEnd as any);
+    };
+  }, [fetchZippclips, pullDistance]);
 
   // Track current video index for scroll snap
   React.useEffect(() => {
@@ -453,10 +526,27 @@ export default function HomePage() {
               <p className="text-sm text-white/70">Loading amazing content...</p>
            </div>
         ) : zippclips && zippclips.length > 0 ? (
-          <div className="h-full w-full overflow-y-auto snap-y snap-mandatory">
+          <div ref={scrollRef} className="h-full w-full overflow-y-auto overflow-x-hidden snap-y snap-mandatory snap-always scroll-smooth touch-pan-y">
+            {pullDistance > 0 && (
+              <div className="sticky top-0 z-20 flex items-center justify-center text-white/80 text-xs h-10"
+                   style={{ transform: `translateY(${pullDistance * 0.3}px)` }}>
+                {pullDistance >= PULL_THRESHOLD ? 'Release to refresh' : 'Pull to refresh'}
+              </div>
+            )}
             {zippclips.map((clip, index) => (
               <div key={clip.id} className="h-full w-full snap-start">
-                <MediaPlayer clip={clip} isActive={index === current} />
+                <MediaPlayer
+                  clip={clip}
+                  isActive={index === current}
+                  onEnded={() => {
+                    if (!scrollRef.current) return;
+                    const next = Math.min(index + 1, zippclips.length - 1);
+                    scrollRef.current.scrollTo({
+                      top: next * window.innerHeight,
+                      behavior: 'smooth',
+                    });
+                  }}
+                />
               </div>
             ))}
           </div>

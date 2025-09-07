@@ -266,14 +266,11 @@ export async function createDirectConversation(otherUserId: string) {
       throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase.rpc('get_or_create_direct_conversation', {
-      user1_id: user.id,
-      user2_id: otherUserId
-    });
+    const { data, error } = await supabase.rpc('create_direct_conversation', { other_user: otherUserId });
 
     if (error) throw error;
 
-    return { success: true, data: { conversation_id: data } };
+    return { success: true, data: { id: data } };
   } catch (error: any) {
     console.error('Error creating conversation:', error);
     return { success: false, error: error.message };

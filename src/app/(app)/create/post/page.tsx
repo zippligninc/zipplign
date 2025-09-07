@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import type { SimpleTrack } from '@/lib/spotify-simple';
 
 const OptionButton = ({ icon: Icon, label, value, onClick }: { icon: React.ElementType, label: string, value: string, onClick?: () => void }) => (
     <button onClick={onClick} className="flex items-center justify-between w-full text-left py-3 px-4 hover:bg-muted/50 rounded-lg">
@@ -33,7 +34,7 @@ export default function PostPage() {
   const [caption, setCaption] = useState('');
   const [loading, setLoading] = useState(false);
   const [zippReference, setZippReference] = useState<any>(null);
-  const [selectedMusic, setSelectedMusic] = useState<any>(null);
+  const [selectedMusic, setSelectedMusic] = useState<SimpleTrack | null>(null);
 
   useEffect(() => {
     const checkUserAndMedia = async () => {
@@ -247,18 +248,20 @@ export default function PostPage() {
             media_url: publicUrl,
             media_type: media.type,
             description: caption || '',
-            song: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : 'Original Sound',
-            song_avatar_url: selectedMusic ? selectedMusic.image : '',
-            spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null
+            song: selectedMusic ? `${selectedMusic.name} - ${selectedMusic.artist}` : 'Original Sound',
+            song_avatar_url: selectedMusic ? selectedMusic.image_url : '',
+            spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null,
+            parent_zippclip_id: zippReference?.id || null
         });
         
         const { error: insertError } = await supabase.from('zippclips').insert({
              media_url: publicUrl,
              media_type: media.type,
              description: caption || '',
-             song: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : 'Original Sound',
-             song_avatar_url: selectedMusic ? selectedMusic.image : '',
-             spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null
+             song: selectedMusic ? `${selectedMusic.name} - ${selectedMusic.artist}` : 'Original Sound',
+             song_avatar_url: selectedMusic ? selectedMusic.image_url : '',
+             spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null,
+             parent_zippclip_id: zippReference?.id || null
         });
 
         if (insertError) {
@@ -361,16 +364,16 @@ export default function PostPage() {
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-center gap-3">
               <Image
-                src={selectedMusic.image}
-                alt={selectedMusic.title}
+                src={selectedMusic.album.images[0]?.url || '/placeholder-album.png'}
+                alt={selectedMusic.album.name}
                 width={40}
                 height={40}
                 className="rounded-md"
               />
               <div className="flex-1">
-                <p className="text-sm font-medium text-green-700">{selectedMusic.title}</p>
-                <p className="text-xs text-green-600">{selectedMusic.artist}</p>
-                <p className="text-xs text-green-500">{selectedMusic.duration}</p>
+                <p className="text-sm font-medium text-green-700">{selectedMusic.name}</p>
+                <p className="text-xs text-green-600">{selectedMusic.artists.map(a => a.name).join(', ')}</p>
+                <p className="text-xs text-green-500">{selectedMusic.album.name}</p>
               </div>
               <Button
                 variant="ghost"

@@ -48,8 +48,8 @@ export default function AddMusicPage() {
       </header>
 
       {/* Music Browser - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-2 sm:p-4 pb-20">
-        <SimpleMusicBrowser
+      <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+        <SimpleMusicBrowser 
           onTrackSelect={handleTrackSelect}
           selectedTrack={selectedTrack}
         />

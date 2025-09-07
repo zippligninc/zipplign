@@ -15,7 +15,15 @@ import { VideoUIOverlay } from '@/components/home/video-ui-overlay';
 import { LazyMedia } from '@/components/optimized/lazy-media';
 import { LoadingOverlay } from '@/components/ui/loading-states';
 import { ErrorBoundary } from '@/components/error/error-boundary';
-import { sampleZippclips } from '@/lib/sample-content';
+// Removed sampleZippclips fallback to use only real data
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 type Profile = {
   username: string;
@@ -45,10 +53,10 @@ const navItems = [
     { href: '/live', label: 'Live' },
 ];
 
-const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) => {
+const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: boolean; onEnded?: () => void }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [hasError, setHasError] = useState(false);
   const { triggerHaptic } = useHapticFeedback();
@@ -64,6 +72,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
   useEffect(() => {
     if (clip.media_type === 'video' && videoRef.current) {
       if (isActive) {
+        videoRef.current.muted = !soundEnabled;
         videoRef.current.play().catch(error => {
           console.warn("Autoplay prevented: ", error);
           setIsPlaying(false);
@@ -71,13 +80,41 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         setIsPlaying(true);
       } else {
         videoRef.current.pause();
-        videoRef.current.muted = true; // Ensure video is muted when not active
+        videoRef.current.muted = true;
         setIsPlaying(false);
-        setIsMuted(true); // Update mute state
         videoRef.current.currentTime = 0;
       }
     }
-  }, [isActive, clip.media_type]);
+  }, [isActive, clip.media_type, soundEnabled]);
+
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+          videoRef.current.muted = true;
+        } catch {}
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem('sound_enabled');
+    if (stored === '1') setSoundEnabled(true);
+    const unlock = () => {
+      sessionStorage.setItem('sound_enabled', '1');
+      setSoundEnabled(true);
+      if (videoRef.current) {
+        videoRef.current.muted = false;
+        videoRef.current.play().catch(() => {});
+      }
+      window.removeEventListener('pointerdown', unlock);
+    };
+    if (!stored) {
+      window.addEventListener('pointerdown', unlock, { once: true });
+    }
+    return () => window.removeEventListener('pointerdown', unlock);
+  }, []);
 
   const handleVideoError = () => {
     console.error('Video failed to load:', clip.media_url);
@@ -101,13 +138,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
   };
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-      if (isMobile) {
-        triggerHaptic('light');
-      }
-    }
+    // Mute control removed by request
   };
 
   const handleTouchStart = () => {
@@ -149,26 +180,15 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
             ref={videoRef}
             className="w-full h-full object-contain"
             loop
-            muted={isMuted}
+            muted={!soundEnabled}
             playsInline
             onError={handleVideoError}
+            onEnded={() => onEnded && onEnded()}
           >
             <source src={clip.media_url} type="video/mp4" />
           </video>
           
-          {/* Mute Button - Layered directly on video */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-2 right-2 h-10 w-10 rounded-full bg-black/80 hover:bg-black/90 z-50 border border-white/20"
-            onClick={toggleMute}
-          >
-            {isMuted ? (
-              <VolumeX className="h-5 w-5 text-white" />
-            ) : (
-              <Volume2 className="h-5 w-5 text-white" />
-            )}
-          </Button>
+          {/* Mute button removed */}
         </div>
       ) : (
         <LazyMedia
@@ -213,6 +233,7 @@ const MediaPlayer = ({ clip, isActive }: { clip: Zippclip; isActive: boolean }) 
         song_avatar_url={clip.song_avatar_url}
         media_url={clip.media_url}
         media_type={clip.media_type}
+        spotify_preview_url={clip.spotify_preview_url}
       />
     </div>
   );
@@ -295,8 +316,8 @@ export default function ZippersPage() {
 
       // If user follows no one, show sample content for demo
       if (!followingData || followingData.length === 0) {
-        console.log('User follows no one, showing sample content');
-        setZippclips(sampleZippclips.slice(0, 5)); // Show first 5 sample clips
+        // No following: show empty state (no mock data)
+        setZippclips([]);
         setLoading(false);
         return;
       }
@@ -337,8 +358,7 @@ export default function ZippersPage() {
 
       // If no zippclips from followed users, show sample content
       if (!data || data.length === 0) {
-        console.log('No zippclips from followed users, showing sample content');
-        setZippclips(sampleZippclips.slice(0, 5));
+        setZippclips([]);
         setLoading(false);
         return;
       }
@@ -361,7 +381,7 @@ export default function ZippersPage() {
         song_avatar_url: clip.song_avatar_url || null,
       }));
 
-      setZippclips(formattedClips);
+      setZippclips(shuffleArray(formattedClips));
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error');
       setFetchError(error);
@@ -396,16 +416,16 @@ export default function ZippersPage() {
     
     const timeoutId = setTimeout(() => {
       if (loading) {
-        console.log('Loading timeout reached, showing sample content');
-        setZippclips(sampleZippclips.slice(0, 5));
+        // Timeout fallback: show empty (no mock data)
+        setZippclips([]);
         setLoading(false);
       }
-    }, 5000); // 5 second timeout
+    }, 5000);
 
     // Try to fetch data, but fallback to sample content
     fetchFollowingZippclips().catch((error) => {
       console.error('Error in fetchFollowingZippclips:', error);
-      setZippclips(sampleZippclips.slice(0, 5));
+      setZippclips([]);
       setLoading(false);
     });
 
@@ -492,12 +512,18 @@ export default function ZippersPage() {
       <ZippersHeader />
       
       <ErrorBoundary>
-        <div className="h-full w-full overflow-y-auto snap-y snap-mandatory">
+        <div className="h-full w-full overflow-y-auto overflow-x-hidden snap-y snap-mandatory snap-always scroll-smooth touch-pan-y">
           {zippclips.map((clip, index) => (
             <div key={clip.id} className="h-full w-full snap-start">
               <MediaPlayer 
                 clip={clip} 
                 isActive={index === current}
+                onEnded={() => {
+                  const container = document.querySelector('.snap-y') as HTMLDivElement | null;
+                  if (!container) return;
+                  const next = Math.min(index + 1, zippclips.length - 1);
+                  container.scrollTo({ top: next * window.innerHeight, behavior: 'smooth' });
+                }}
               />
             </div>
           ))}

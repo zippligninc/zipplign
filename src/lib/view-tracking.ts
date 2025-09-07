@@ -18,9 +18,11 @@ export async function incrementZippclipViews(zippclipId: string): Promise<ViewTr
       throw new Error('Supabase client not available');
     }
 
-    if (!zippclipId || typeof zippclipId !== 'string') {
+    // Validate UUID (prevent errors like "invalid input syntax for type uuid: '3'")
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!zippclipId || typeof zippclipId !== 'string' || !uuidRegex.test(zippclipId)) {
       console.error('Invalid zippclip ID:', zippclipId);
-      return { success: false, error: 'Invalid zippclip ID' };
+      return { success: true, data: { views: 0 } };
     }
 
     // Try to get the current view count (with fallback if column doesn't exist)

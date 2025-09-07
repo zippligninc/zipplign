@@ -212,7 +212,8 @@ export default function CreatePage() {
         try {
           sessionStorage.setItem('capturedImage', dataUrl);
           sessionStorage.removeItem('capturedVideo');
-          router.push('/create/post');
+          // Force music selection step for images
+          router.push('/create/music');
         } catch (error) {
           console.error("Error storing image:", error);
           toast({
@@ -393,10 +394,13 @@ export default function CreatePage() {
         console.log('Storing as image');
         sessionStorage.setItem('capturedImage', dataUrl);
         sessionStorage.removeItem('capturedVideo');
+        // Force music selection flow for images
+        router.push('/create/music');
       } else if (file.type.startsWith('video/')) {
         console.log('Storing as video');
         sessionStorage.setItem('capturedVideo', dataUrl);
         sessionStorage.removeItem('capturedImage');
+        router.push('/create/post');
       } else {
         toast({
           variant: "destructive",
@@ -405,7 +409,6 @@ export default function CreatePage() {
         });
         return;
       }
-      router.push('/create/post');
     };
     reader.readAsDataURL(file);
   };

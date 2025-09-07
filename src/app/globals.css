@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent accidental horizontal scrollbars app-wide */
+html, body, #__next, :root {
+  overflow-x: hidden;
+}
+
+/* Ensure full-width snap items don't introduce horizontal scroll */
+.snap-y > * {
+  width: 100vw;
+}
+
+/* Hide scrollbars globally while preserving scroll behavior */
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;    /* Firefox */
+}
+*::-webkit-scrollbar {
+  display: none;            /* Chrome, Safari, Opera */
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

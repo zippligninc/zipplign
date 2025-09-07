@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, ShoppingBag, Star, Heart, Search, Plus, Store, Package } from 'lucide-react';
+import { ShoppingCart, ShoppingBag, Star, Heart, Search, Plus, Store, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -41,7 +41,7 @@ function ShopHeader() {
             </div>
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-white/80 hover:bg-transparent hover:text-white" asChild>
               <Link href="/notifications">
-                <Bell className="h-5 w-5" />
+                <ShoppingCart className="h-5 w-5" />
                 <span className="sr-only">Notifications</span>
               </Link>
             </Button>
@@ -105,7 +105,7 @@ export default function ShopPage() {
     <div className="h-screen bg-black text-white overflow-hidden">
       <ShopHeader />
       
-      <div className="h-full pt-16 pb-24 flex flex-col">
+      <div className="h-full pt-16 flex flex-col">
         <div className="px-4 py-4">
           <div className="flex items-center gap-4 mb-4">
             <LogoLarge className="w-12 h-12" />

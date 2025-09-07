@@ -59,84 +59,24 @@ export const MUSIC_CATEGORIES = [
 // Sample music library - in a real app, this would come from Spotify API
 export const SAMPLE_MUSIC_LIBRARY: SimpleTrack[] = [
   {
-    id: '1',
-    name: 'Blinding Lights',
-    artist: 'The Weeknd',
-    album: 'After Hours',
-    duration: '3:20',
-    preview_url: 'https://p.scdn.co/mp3-preview/sample1.mp3',
-    image_url: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36',
-    spotify_url: 'https://open.spotify.com/track/0VjIjW4WUjz9FcI5nbtM4x'
+    id: '9',
+    name: 'No Broke Boys',
+    artist: 'Disco Lines, Tinashe',
+    album: 'No Broke Boys (Single)',
+    duration: '2:43',
+    preview_url: '/Musics/goldn-uk-drill-music-116392.mp3',
+    image_url: '/Images/logo.png',
+    spotify_url: 'https://open.spotify.com/track/3cZajhyr8LmtPfHZ9296tj?si=dbc70b7b11344094'
   },
   {
-    id: '2',
-    name: 'Levitating',
-    artist: 'Dua Lipa',
-    album: 'Future Nostalgia',
-    duration: '3:23',
-    preview_url: 'https://p.scdn.co/mp3-preview/sample2.mp3',
-    image_url: 'https://i.scdn.co/image/ab67616d0000b273ef24c3d2c4f4b2b2b2b2b2b2',
-    spotify_url: 'https://open.spotify.com/track/463CkQjx2Zk1yXoBuierM9'
-  },
-  {
-    id: '3',
-    name: 'Good 4 U',
-    artist: 'Olivia Rodrigo',
-    album: 'SOUR',
-    duration: '2:58',
-    preview_url: 'https://p.scdn.co/mp3-preview/sample3.mp3',
-    image_url: 'https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a',
-    spotify_url: 'https://open.spotify.com/track/4ZtFanR9U6ndgddUvNcjcG'
-  },
-  {
-    id: '4',
-    name: 'Industry Baby',
-    artist: 'Lil Nas X ft. Jack Harlow',
-    album: 'MONTERO',
-    duration: '3:32',
-    preview_url: 'https://p.scdn.co/mp3-preview/sample4.mp3',
-    image_url: 'https://i.scdn.co/image/ab67616d0000b273c4b2b2b2b2b2b2b2b2b2b2b2',
-    spotify_url: 'https://open.spotify.com/track/27NovPIUIRrOZoCHxABJwK'
-  },
-  {
-    id: '5',
-    name: 'Stay',
-    artist: 'The Kid LAROI & Justin Bieber',
-    album: 'F*CK LOVE 3: OVER YOU',
-    duration: '2:21',
-    preview_url: 'https://p.scdn.co/mp3-preview/sample5.mp3',
-    image_url: 'https://i.scdn.co/image/ab67616d0000b273b2b2b2b2b2b2b2b2b2b2b2b2',
-    spotify_url: 'https://open.spotify.com/track/5PjdY0CKGZdEuoNab3yDmX'
-  },
-  {
-    id: '6',
-    name: 'Heat Waves',
-    artist: 'Glass Animals',
-    album: 'Dreamland',
-    duration: '3:58',
-    preview_url: 'https://p.scdn.co/mp3-preview/sample6.mp3',
-    image_url: 'https://i.scdn.co/image/ab67616d0000b273d2b2b2b2b2b2b2b2b2b2b2b2',
-    spotify_url: 'https://open.spotify.com/track/02MWAaffLxlfxAUY7c5dvx'
-  },
-  {
-    id: '7',
-    name: 'Peaches',
-    artist: 'Justin Bieber ft. Daniel Caesar & Giveon',
-    album: 'Justice',
-    duration: '3:18',
-    preview_url: 'https://p.scdn.co/mp3-preview/sample7.mp3',
-    image_url: 'https://i.scdn.co/image/ab67616d0000b273e2b2b2b2b2b2b2b2b2b2b2b2',
-    spotify_url: 'https://open.spotify.com/track/4iJyoBOLtHqaGxP12qzhQI'
-  },
-  {
-    id: '8',
-    name: 'Kiss Me More',
-    artist: 'Doja Cat ft. SZA',
-    album: 'Planet Her',
-    duration: '3:28',
-    preview_url: 'https://p.scdn.co/mp3-preview/sample8.mp3',
-    image_url: 'https://i.scdn.co/image/ab67616d0000b273f2b2b2b2b2b2b2b2b2b2b2b2',
-    spotify_url: 'https://open.spotify.com/track/3DarAbFujv6eYNliUTyqtz'
+    id: '10',
+    name: 'Dior (feat. Chrystal)',
+    artist: 'MK, Chrystal',
+    album: 'Dior (Single)',
+    duration: '2:49',
+    preview_url: '/Musics/goldn-uk-drill-music-116392.mp3',
+    image_url: '/Images/logo.png',
+    spotify_url: 'https://open.spotify.com/track/3kPNkracUxYvwpzkdpHMQQ?si=6bdad5beb292478c'
   }
 ];
 

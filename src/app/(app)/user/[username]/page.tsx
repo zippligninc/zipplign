@@ -403,7 +403,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="zippclip" className="pt-1 pb-20">
+          <TabsContent value="zippclip" className="pt-1">
             {loadingClips ? (
               <div className="grid grid-cols-3 gap-1">
                 {Array.from({ length: 12 }).map((_, i) => (
@@ -438,15 +438,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
             )}
           </TabsContent>
           
-            <TabsContent value="saved" className="pb-20">
+            <TabsContent value="saved">
             <div className="text-center py-8 text-white/70 text-sm">No saved videos.</div>
             </TabsContent>
           
-            <TabsContent value="private" className="pb-20">
+            <TabsContent value="private">
             <div className="text-center py-8 text-white/70 text-sm">No private videos.</div>
             </TabsContent>
           
-            <TabsContent value="likes" className="pb-20">
+            <TabsContent value="likes">
             <div className="text-center py-8 text-white/70 text-sm">No liked videos.</div>
             </TabsContent>
           </Tabs>

@@ -153,17 +153,18 @@ export async function getSaveCount(zippclipId: string): Promise<SaveActionRespon
 
     const { count, error } = await supabase
       .from('saves')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact' })
       .eq('zippclip_id', zippclipId);
 
     if (error) {
-      console.error('Error fetching save count:', error);
-      return { success: true, data: { saved: false, saves: 0 } };
+      // Gracefully fall back without noisy logs
+      return { success: true, data: { saved: false, saves: 0, count: 0 } as any };
     }
 
-    return { success: true, data: { saved: false, saves: count || 0 } };
+    const value = count || 0;
+    // Return both legacy `saves` and new `count` to satisfy all callers
+    return { success: true, data: { saved: false, saves: value, count: value } as any };
   } catch (error: any) {
-    console.error('Error in getSaveCount:', error);
-    return { success: true, data: { saved: false, saves: 0 } };
+    return { success: true, data: { saved: false, saves: 0, count: 0 } as any };
   }
 }

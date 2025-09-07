@@ -101,7 +101,7 @@ export default function InboxPage() {
   const totalUnreadCount = conversations.reduce((sum, conv) => sum + conv.unread_count, 0);
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto pb-20">
+    <div className="flex h-full flex-col overflow-y-auto">
       <header className="flex items-center justify-between p-3 sticky top-0 bg-background z-10 border-b">
         <Link href="/add-friends">
           <Button variant="ghost" size="icon">
@@ -208,13 +208,13 @@ export default function InboxPage() {
                     </Link>
                   ))
                 ) : (
-            <div className="text-center py-12">
+            <div className="py-12 flex flex-col items-center justify-center text-center">
               <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No conversations yet</h3>
               <p className="text-muted-foreground mb-6">
                 Start messaging your friends and followers
               </p>
-              <Button onClick={handleNewMessage} className="flex items-center gap-2">
+              <Button onClick={handleNewMessage} className="flex items-center gap-2 mx-auto">
                 <Pencil className="h-4 w-4" />
                 Start a conversation
               </Button>

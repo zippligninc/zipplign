@@ -379,16 +379,16 @@ export default function PostPage() {
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-center gap-3">
               <Image
-                src={selectedMusic.album.images[0]?.url || '/placeholder-album.png'}
-                alt={selectedMusic.album.name}
+                src={selectedMusic.image_url || '/placeholder-album.png'}
+                alt={selectedMusic.album || 'Selected Music'}
                 width={40}
                 height={40}
                 className="rounded-md"
               />
               <div className="flex-1">
                 <p className="text-sm font-medium text-green-700">{selectedMusic.name}</p>
-                <p className="text-xs text-green-600">{selectedMusic.artists.map(a => a.name).join(', ')}</p>
-                <p className="text-xs text-green-500">{selectedMusic.album.name}</p>
+                <p className="text-xs text-green-600">{selectedMusic.artist}</p>
+                <p className="text-xs text-green-500">{selectedMusic.album}</p>
               </div>
               <Button
                 variant="ghost"

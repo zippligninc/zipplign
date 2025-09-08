@@ -420,6 +420,12 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
   // Audio control functions
   const toggleAudioPlay = useCallback(() => {
     if (audioRef.current) {
+      // Ensure source is set
+      if (!audioRef.current.src && music_preview_url) {
+        try {
+          audioRef.current.src = music_preview_url;
+        } catch {}
+      }
       if (isAudioPlaying) {
         audioRef.current.pause();
         setIsAudioPlaying(false);

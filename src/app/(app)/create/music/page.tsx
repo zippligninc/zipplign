@@ -17,8 +17,10 @@ export default function AddMusicPage() {
 
   const handleContinue = () => {
     if (selectedTrack) {
-      // Store selected track in localStorage or pass to next page
-      localStorage.setItem('selectedMusic', JSON.stringify(selectedTrack));
+      // Store selected track in sessionStorage for consistency with post page
+      try {
+        sessionStorage.setItem('selectedMusic', JSON.stringify(selectedTrack));
+      } catch {}
       router.push('/create/post');
     }
   };
@@ -63,7 +65,8 @@ export default function AddMusicPage() {
             className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-800 text-sm sm:text-base"
             onClick={() => {
               setSelectedTrack(null);
-              localStorage.removeItem('selectedMusic');
+              try { sessionStorage.removeItem('selectedMusic'); } catch {}
+              try { localStorage.removeItem('selectedMusic'); } catch {}
             }}
           >
             No Music

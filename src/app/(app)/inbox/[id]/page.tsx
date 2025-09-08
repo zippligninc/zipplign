@@ -97,9 +97,12 @@ function ConversationContent() {
 
   const fetchConversationInfo = async () => {
     try {
-      if (!supabase || !currentUser) return;
+      if (!supabase) return;
 
-      // Get conversation participants
+      // Get user inline to avoid stale state
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data: participants } = await supabase
         .from('conversation_participants')
         .select(`
@@ -115,14 +118,19 @@ function ConversationContent() {
 
       if (participants) {
         const otherParticipants = participants
-          .filter(p => p.profiles?.id !== currentUser.id)
-          .map(p => p.profiles);
-        
+          .map(p => p.profiles)
+          .filter(p => p && p.id !== user.id);
+
+        const name = otherParticipants.length === 1
+          ? (otherParticipants[0]?.full_name || otherParticipants[0]?.username || 'Unknown User')
+          : otherParticipants
+              .map(p => p?.full_name || p?.username)
+              .filter(Boolean)
+              .join(', ') || 'Group Chat';
+
         setConversationInfo({
           participants: otherParticipants,
-          name: otherParticipants.length === 1 
-            ? otherParticipants[0]?.full_name 
-            : otherParticipants.map(p => p?.full_name).join(', ')
+          name,
         });
       }
     } catch (error) {
@@ -211,14 +219,14 @@ function ConversationContent() {
           
                 <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={conversationInfo?.participants[0]?.avatar_url} />
+              <AvatarImage src={conversationInfo?.participants?.[0]?.avatar_url} />
               <AvatarFallback>
-                {conversationInfo?.name?.charAt(0) || '?'}
+                {(conversationInfo?.name || '?').charAt(0)}
               </AvatarFallback>
                     </Avatar>
             <div>
               <h1 className="font-semibold text-sm">
-                {conversationInfo?.name || 'Loading...'}
+                {conversationInfo?.name || 'Unknown Conversation'}
               </h1>
               <p className="text-xs text-muted-foreground">
                 {conversationInfo?.participants?.length === 1 ? 'Active now' : `${conversationInfo?.participants?.length || 0} participants`}

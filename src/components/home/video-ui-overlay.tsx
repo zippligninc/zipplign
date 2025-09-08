@@ -47,6 +47,8 @@ interface VideoUIOverlayProps {
   music_preview_url?: string | null;
   parentId?: string | null;
   isActive?: boolean;
+  showSoundPrompt?: boolean;
+  onEnableSound?: () => void;
 }
 
 export const VideoUIOverlay = React.memo(function VideoUIOverlay({
@@ -65,6 +67,8 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
   music_preview_url,
   parentId,
   isActive,
+  showSoundPrompt,
+  onEnableSound,
 }: VideoUIOverlayProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -692,6 +696,20 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
               </div>
             </div>
           </Link>
+          {showSoundPrompt && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 bg-black/40 text-white hover:bg-black/60 rounded-full"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEnableSound && onEnableSound();
+              }}
+            >
+              Enable sound
+            </Button>
+          )}
           {music_preview_url && (
             <div className="flex items-center gap-1 ml-1">
               <Button

@@ -282,20 +282,7 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
         />
       )}
 
-      {/* Enable sound prompt */}
-      {isActive && !soundEnabled && showSoundPrompt && (
-        <div className="absolute top-12 right-3 z-20">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="bg-black/50 text-white hover:bg-black/70 rounded-full px-3 h-8"
-            onClick={enableSound}
-          >
-            Tap to enable sound
-          </Button>
-        </div>
-      )}
-
+      
       {/* Video Controls Overlay */}
       {clip.media_type === 'video' && showControls && (
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -328,8 +315,10 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
         media_url={clip.media_url}
         media_type={clip.media_type}
         music_preview_url={clip.music_preview_url}
-        parentId={(clip as any).parent_zippclip_id ?? null}
+        parentId={'parent_zippclip_id' in clip ? (clip as any).parent_zippclip_id ?? null : null}
         isActive={isActive}
+        showSoundPrompt={isActive && !soundEnabled && showSoundPrompt}
+        onEnableSound={enableSound}
       />
 
       {/* Audio element for posts with attached music (image or video) */}

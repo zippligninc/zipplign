@@ -452,23 +452,12 @@ export default function ZippersPage() {
   // Fetch zippclips on mount
   useEffect(() => {
     console.log('Zippers page mounted, starting data fetch');
-    
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        // Timeout fallback: show empty (no mock data)
-        setZippclips([]);
-        setLoading(false);
-      }
-    }, 5000);
-
-    // Try to fetch data, but fallback to sample content
+    // Fetch data
     fetchFollowingZippclips().catch((error) => {
       console.error('Error in fetchFollowingZippclips:', error);
       setZippclips([]);
       setLoading(false);
     });
-
-    return () => clearTimeout(timeoutId);
   }, []); // Remove dependencies to prevent infinite re-renders
 
   // Get current user

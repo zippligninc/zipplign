@@ -383,27 +383,27 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
   }, [supabase, isLiking, isLiked, id, toast, router]);
 
   // Wrapper click handlers to prevent clicks from propagating to underlying media
-  const onLikeClick = (e: React.MouseEvent) => {
+  const onLikeClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     handleLike();
   };
-  const onCommentClick = (e: React.MouseEvent) => {
+  const onCommentClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     handleComment();
   };
-  const onSaveClick = (e: React.MouseEvent) => {
+  const onSaveClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     handleSave();
   };
-  const onShareClick = (e: React.MouseEvent) => {
+  const onShareClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     handleShare();
   };
-  const onRideClick = (e: React.MouseEvent) => {
+  const onRideClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     sessionStorage.setItem('zipp_reference', JSON.stringify({ id, user: user.username, description, song }));
@@ -788,8 +788,8 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={onLikeClick}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          onPointerDown={onLikeClick}
           disabled={isLiking}
           aria-label={isLiked ? 'Unlike' : 'Like'}
           aria-pressed={isLiked}
@@ -801,8 +801,8 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={onCommentClick}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          onPointerDown={onCommentClick}
           aria-label="Comment"
         >
           <MessageCircle className="h-7 w-7 fill-white" />
@@ -812,8 +812,8 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={onSaveClick}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          onPointerDown={onSaveClick}
           disabled={isSaving}
           aria-label={isSaved ? 'Unsave' : 'Save'}
           aria-pressed={isSaved}
@@ -826,8 +826,8 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full"
-          onClick={onRideClick}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full"
+          onPointerDown={onRideClick}
           aria-label="Ride this Zipp"
         >
           <Zap className="h-7 w-7 fill-white" />
@@ -839,8 +839,8 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={onShareClick}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          onPointerDown={onShareClick}
           aria-label="Share"
         >
           <Send className="h-7 w-7 fill-white" />

@@ -86,6 +86,8 @@ export default function CreatePage() {
   
   // Zipplign Core Feature: Music Integration
   const [selectedMusic, setSelectedMusic] = useState<any>(null);
+  // Show Next button after media is selected/uploaded/captured
+  const [hasSelectedMedia, setHasSelectedMedia] = useState(false);
 
 
   useEffect(() => {
@@ -212,8 +214,7 @@ export default function CreatePage() {
         try {
           sessionStorage.setItem('capturedImage', dataUrl);
           sessionStorage.removeItem('capturedVideo');
-          // Force music selection step for images
-          router.push('/create/music');
+          setHasSelectedMedia(true);
         } catch (error) {
           console.error("Error storing image:", error);
           toast({
@@ -336,7 +337,7 @@ export default function CreatePage() {
         try {
             sessionStorage.setItem('capturedVideo', base64data);
             sessionStorage.removeItem('capturedImage');
-            router.push('/create/post');
+            setHasSelectedMedia(true);
         } catch (error) {
             console.error("Error storing video:", error);
             toast({
@@ -394,13 +395,12 @@ export default function CreatePage() {
         console.log('Storing as image');
         sessionStorage.setItem('capturedImage', dataUrl);
         sessionStorage.removeItem('capturedVideo');
-        // Force music selection flow for images
-        router.push('/create/music');
+        setHasSelectedMedia(true);
       } else if (file.type.startsWith('video/')) {
         console.log('Storing as video');
         sessionStorage.setItem('capturedVideo', dataUrl);
         sessionStorage.removeItem('capturedImage');
-        router.push('/create/post');
+        setHasSelectedMedia(true);
       } else {
         toast({
           variant: "destructive",
@@ -502,6 +502,15 @@ export default function CreatePage() {
               disabled={isDraftSaving}
             >
               {isDraftSaving ? 'Saving...' : 'Save Draft'}
+            </Button>
+          )}
+          {hasSelectedMedia && (
+            <Button
+              size="sm"
+              className="rounded-full bg-white/90 text-black px-3 py-1 h-auto text-xs"
+              onClick={() => router.push('/create/post')}
+            >
+              Next
             </Button>
           )}
         </div>

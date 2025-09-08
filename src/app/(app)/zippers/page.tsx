@@ -61,6 +61,7 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [showSoundPrompt, setShowSoundPrompt] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [hasError, setHasError] = useState(false);
   const { triggerHaptic } = useHapticFeedback();
@@ -77,9 +78,9 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
     if (clip.media_type === 'video' && videoRef.current) {
       if (isActive) {
         videoRef.current.muted = !soundEnabled;
-        videoRef.current.play().catch(error => {
-          console.warn("Autoplay prevented: ", error);
+        videoRef.current.play().catch(() => {
           setIsPlaying(false);
+          setShowSoundPrompt(true);
         });
         setIsPlaying(true);
       } else {
@@ -92,8 +93,8 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
       if (isActive) {
         // For images with audio, autoplay the audio
         audioRef.current.muted = !soundEnabled;
-        audioRef.current.play().catch(error => {
-          console.warn("Audio autoplay prevented: ", error);
+        audioRef.current.play().catch(() => {
+          setShowSoundPrompt(true);
         });
       } else {
         // Stop audio when image is not active
@@ -123,21 +124,29 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
 
   useEffect(() => {
     const stored = sessionStorage.getItem('sound_enabled');
-    if (stored === '1') setSoundEnabled(true);
-    const unlock = () => {
-      sessionStorage.setItem('sound_enabled', '1');
+    if (stored === '1') {
       setSoundEnabled(true);
-      if (videoRef.current) {
-        videoRef.current.muted = false;
-        videoRef.current.play().catch(() => {});
-      }
-      window.removeEventListener('pointerdown', unlock);
-    };
-    if (!stored) {
-      window.addEventListener('pointerdown', unlock, { once: true });
+      setShowSoundPrompt(false);
+    } else {
+      setSoundEnabled(false);
+      setShowSoundPrompt(true);
     }
-    return () => window.removeEventListener('pointerdown', unlock);
   }, []);
+
+  const enableSound = () => {
+    try { sessionStorage.setItem('sound_enabled', '1'); } catch {}
+    setSoundEnabled(true);
+    setShowSoundPrompt(false);
+    const vid = videoRef.current;
+    const aud = audioRef.current;
+    if (clip.music_preview_url && aud) {
+      aud.muted = false;
+      aud.play().catch(() => {});
+    } else if (clip.media_type === 'video' && vid) {
+      vid.muted = false;
+      vid.play().catch(() => {});
+    }
+  };
 
   const handleVideoError = () => {
     console.error('Video failed to load:', clip.media_url);
@@ -252,13 +261,15 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
         likes={clip.likes}
         comments={clip.comments}
         saves={clip.saves}
-        shares={clip.shares}
+        shares={0}
         song_avatar_url={clip.song_avatar_url}
         media_url={clip.media_url}
         media_type={clip.media_type}
         music_preview_url={clip.music_preview_url}
-        parentId={(clip as any).parent_zippclip_id ?? null}
+        parentId={'parent_zippclip_id' in (clip as any) ? (clip as any).parent_zippclip_id ?? null : null}
         isActive={isActive}
+        showSoundPrompt={isActive && !soundEnabled && showSoundPrompt}
+        onEnableSound={enableSound}
       />
 
       {/* Audio element for images with music */}
@@ -459,6 +470,29 @@ export default function ZippersPage() {
       setLoading(false);
     });
   }, []); // Remove dependencies to prevent infinite re-renders
+
+  // Refresh on window focus
+  useEffect(() => {
+    const onFocus = () => {
+      fetchFollowingZippclips();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+
+  // Realtime: refresh when follows or zippclips change
+  useEffect(() => {
+    if (!supabase) return;
+    const client = supabase as NonNullable<typeof supabase>;
+    const channel = client
+      .channel('zippers_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'follows' }, () => fetchFollowingZippclips())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'zippclips' }, () => fetchFollowingZippclips())
+      .subscribe();
+    return () => {
+      try { client.removeChannel(channel); } catch {}
+    };
+  }, []);
 
   // Get current user
   useEffect(() => {

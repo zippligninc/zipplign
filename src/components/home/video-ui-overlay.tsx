@@ -689,7 +689,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
                       {song?.slice(0, 10) || ''}
                     </span>
                     {song && song.length > 10 && (
-                      <div className="relative ml-2 w-28 overflow-hidden">
+                      <div className="relative ml-2 w-36 overflow-hidden">
                         <div className="whitespace-nowrap animate-[marquee_8s_linear_infinite] text-xs text-white/90">
                           {song.slice(10)}
                           <span className="mx-4">•</span>
@@ -763,6 +763,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
           onClick={handleLike}
           disabled={isLiking}
+          aria-label={isLiked ? 'Unlike' : 'Like'}
         >
           <Heart className={`h-7 w-7 ${isLiked ? 'fill-red-500 text-red-500' : 'fill-white'}`} />
           <span className="text-sm font-bold">{likeCount}</span>
@@ -773,6 +774,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           size="icon" 
           className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
           onClick={handleComment}
+          aria-label="Comment"
         >
           <MessageCircle className="h-7 w-7 fill-white" />
           <span className="text-sm font-bold">{commentCount}</span>
@@ -784,11 +786,12 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
           onClick={handleSave}
           disabled={isSaving}
+          aria-label={isSaved ? 'Unsave' : 'Save'}
         >
           <Bookmark className={`h-7 w-7 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
           <span className="text-sm font-bold">{saveCount}</span>
         </Button>
-
+        
         {/* Ride My Zipp */}
         <Button 
           variant="ghost" 
@@ -798,6 +801,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
             sessionStorage.setItem('zipp_reference', JSON.stringify({ id, user: user.username, description, song }));
             window.location.href = '/create';
           }}
+          aria-label="Ride this Zipp"
         >
           <Zap className="h-7 w-7 fill-white" />
           {zipperCount > 0 && (
@@ -810,6 +814,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           size="icon" 
           className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
           onClick={handleShare}
+          aria-label="Share"
         >
           <Send className="h-7 w-7 fill-white" />
           <span className="text-sm font-bold">{shares}</span>

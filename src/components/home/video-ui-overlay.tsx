@@ -382,6 +382,34 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
     setIsLiking(false);
   }, [supabase, isLiking, isLiked, id, toast, router]);
 
+  // Wrapper click handlers to prevent clicks from propagating to underlying media
+  const onLikeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleLike();
+  };
+  const onCommentClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleComment();
+  };
+  const onSaveClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleSave();
+  };
+  const onShareClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleShare();
+  };
+  const onRideClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sessionStorage.setItem('zipp_reference', JSON.stringify({ id, user: user.username, description, song }));
+    window.location.href = '/create';
+  };
+
   const handleComment = useCallback(async () => {
     if (!supabase) {
       toast({
@@ -761,9 +789,10 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           variant="ghost" 
           size="icon" 
           className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={handleLike}
+          onClick={onLikeClick}
           disabled={isLiking}
           aria-label={isLiked ? 'Unlike' : 'Like'}
+          aria-pressed={isLiked}
         >
           <Heart className={`h-7 w-7 ${isLiked ? 'fill-red-500 text-red-500' : 'fill-white'}`} />
           <span className="text-sm font-bold">{likeCount}</span>
@@ -773,7 +802,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           variant="ghost" 
           size="icon" 
           className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={handleComment}
+          onClick={onCommentClick}
           aria-label="Comment"
         >
           <MessageCircle className="h-7 w-7 fill-white" />
@@ -784,9 +813,10 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           variant="ghost" 
           size="icon" 
           className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={handleSave}
+          onClick={onSaveClick}
           disabled={isSaving}
           aria-label={isSaved ? 'Unsave' : 'Save'}
+          aria-pressed={isSaved}
         >
           <Bookmark className={`h-7 w-7 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
           <span className="text-sm font-bold">{saveCount}</span>
@@ -797,10 +827,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           variant="ghost" 
           size="icon" 
           className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full"
-          onClick={() => {
-            sessionStorage.setItem('zipp_reference', JSON.stringify({ id, user: user.username, description, song }));
-            window.location.href = '/create';
-          }}
+          onClick={onRideClick}
           aria-label="Ride this Zipp"
         >
           <Zap className="h-7 w-7 fill-white" />
@@ -813,7 +840,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           variant="ghost" 
           size="icon" 
           className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={handleShare}
+          onClick={onShareClick}
           aria-label="Share"
         >
           <Send className="h-7 w-7 fill-white" />

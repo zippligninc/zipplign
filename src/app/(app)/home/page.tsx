@@ -435,7 +435,7 @@ export default function HomePage() {
         parent_zippclip_id: clip.parent_zippclip_id || null,
       }));
 
-      return formattedClips.length > 0 ? formattedClips : shuffleArray(sampleZippclips);
+      return formattedClips.length > 0 ? shuffleArray(formattedClips) : shuffleArray(sampleZippclips);
     },
     {
       staleTime: 2 * 60 * 1000, // 2 minutes

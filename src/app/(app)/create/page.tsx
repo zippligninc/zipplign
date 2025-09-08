@@ -86,7 +86,7 @@ export default function CreatePage() {
   
   // Zipplign Core Feature: Music Integration
   const [selectedMusic, setSelectedMusic] = useState<any>(null);
-  // Show Next button after media is selected/uploaded/captured
+  // Track when media is ready so we can show Next
   const [hasSelectedMedia, setHasSelectedMedia] = useState(false);
 
 
@@ -209,18 +209,30 @@ export default function CreatePage() {
           context.scale(-1, 1);
         }
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/png');
-        
         try {
-          sessionStorage.setItem('capturedImage', dataUrl);
-          sessionStorage.removeItem('capturedVideo');
-          setHasSelectedMedia(true);
+          // Prefer object URL to avoid storage quota issues
+          canvas.toBlob((blob) => {
+            try {
+              if (blob) {
+                const objectUrl = URL.createObjectURL(blob);
+                sessionStorage.setItem('capturedImage', objectUrl);
+                sessionStorage.removeItem('capturedVideo');
+                setHasSelectedMedia(true);
+              } else {
+                // Fallback: minimal flag without storing the entire image
+                setHasSelectedMedia(true);
+              }
+            } catch (e) {
+              console.error('Error creating object URL:', e);
+              setHasSelectedMedia(true);
+            }
+          }, 'image/png');
         } catch (error) {
           console.error("Error storing image:", error);
           toast({
             variant: "destructive",
             title: "Error",
-            description: "Could not save photo. Storage might be full.",
+            description: "Could not save photo.",
           });
         }
       }
@@ -330,23 +342,19 @@ export default function CreatePage() {
   useEffect(() => {
     if (!isRecording && recordedChunks.length > 0) {
       const blob = new Blob(recordedChunks, { type: 'video/webm' });
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = () => {
-        const base64data = reader.result as string;
-        try {
-            sessionStorage.setItem('capturedVideo', base64data);
-            sessionStorage.removeItem('capturedImage');
-            setHasSelectedMedia(true);
-        } catch (error) {
-            console.error("Error storing video:", error);
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Could not save video. Storage might be full.",
-            });
-        }
-      };
+      try {
+        const objectUrl = URL.createObjectURL(blob);
+        sessionStorage.setItem('capturedVideo', objectUrl);
+        sessionStorage.removeItem('capturedImage');
+        setHasSelectedMedia(true);
+      } catch (error) {
+        console.error("Error storing video URL:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not save video.",
+        });
+      }
       setRecordedChunks([]);
     }
   }, [isRecording, recordedChunks, router, toast]);
@@ -383,34 +391,31 @@ export default function CreatePage() {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    console.log('File selected:', file.name, file.type, file.size);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      console.log('Data URL created, length:', dataUrl.length);
-      
+    try {
+      const objectUrl = URL.createObjectURL(file);
       if (file.type.startsWith('image/')) {
-        console.log('Storing as image');
-        sessionStorage.setItem('capturedImage', dataUrl);
+        sessionStorage.setItem('capturedImage', objectUrl);
         sessionStorage.removeItem('capturedVideo');
-        setHasSelectedMedia(true);
       } else if (file.type.startsWith('video/')) {
-        console.log('Storing as video');
-        sessionStorage.setItem('capturedVideo', dataUrl);
+        sessionStorage.setItem('capturedVideo', objectUrl);
         sessionStorage.removeItem('capturedImage');
-        setHasSelectedMedia(true);
       } else {
         toast({
-          variant: "destructive",
-          title: "Unsupported File Type",
-          description: "Please select an image or video file.",
+          variant: 'destructive',
+          title: 'Unsupported File Type',
+          description: 'Please select an image or video file.',
         });
         return;
       }
-    };
-    reader.readAsDataURL(file);
+      setHasSelectedMedia(true);
+    } catch (e) {
+      console.error('Error creating object URL:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not process selected file.',
+      });
+    }
   };
 
 

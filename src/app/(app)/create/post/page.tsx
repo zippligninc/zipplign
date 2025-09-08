@@ -146,6 +146,21 @@ export default function PostPage() {
       return new Blob([u8arr], {type:mime});
   }
 
+  // Helper: get Blob from a URL that may be object URL or data URL
+  const getBlobFromUrl = async (url: string): Promise<Blob> => {
+    if (url.startsWith('blob:')) {
+      // Fetch the blob from the object URL
+      const res = await fetch(url);
+      return await res.blob();
+    }
+    if (url.startsWith('data:')) {
+      return dataURLtoBlob(url);
+    }
+    // Remote URL in storage: download it
+    const res = await fetch(url);
+    return await res.blob();
+  };
+
   // Zipplign Core Feature: Validate video duration
   const validateVideoDuration = (videoBlob: Blob): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -199,7 +214,7 @@ export default function PostPage() {
         console.log('Media type:', media.type);
         console.log('Media URL length:', media.url.length);
         
-        const blob = dataURLtoBlob(media.url);
+        const blob = await getBlobFromUrl(media.url);
         console.log('Blob created:', blob.type, blob.size);
         
         // Zipplign Core Feature: Validate video duration before upload

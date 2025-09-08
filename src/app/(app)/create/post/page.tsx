@@ -263,7 +263,7 @@ export default function PostPage() {
             media_url: publicUrl,
             media_type: media.type,
             description: caption || '',
-            song: selectedMusic ? `${selectedMusic.name} - ${selectedMusic.artist}` : 'Original Sound',
+            song: selectedMusic ? selectedMusic.name : 'Original Sound',
             song_avatar_url: selectedMusic ? selectedMusic.image_url : '',
             music_preview_url: selectedMusic ? selectedMusic.preview_url : null,
             parent_zippclip_id: zippReference?.id || null
@@ -273,7 +273,7 @@ export default function PostPage() {
              media_url: publicUrl,
              media_type: media.type,
              description: caption || '',
-             song: selectedMusic ? `${selectedMusic.name} - ${selectedMusic.artist}` : 'Original Sound',
+             song: selectedMusic ? selectedMusic.name : 'Original Sound',
              song_avatar_url: selectedMusic ? selectedMusic.image_url : '',
              music_preview_url: selectedMusic ? selectedMusic.preview_url : null,
              parent_zippclip_id: zippReference?.id || null

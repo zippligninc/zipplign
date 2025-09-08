@@ -21,6 +21,11 @@ html, body, #__next, :root {
   display: none;            /* Chrome, Safari, Opera */
 }
 
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

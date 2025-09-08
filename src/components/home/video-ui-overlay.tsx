@@ -671,20 +671,24 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
             <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 max-w-[70%]">
               <Music className="h-4 w-4 text-teal-400" />
               <div className="overflow-hidden">
-                <div className="flex items-center">
-                  <span className="text-xs font-medium text-white">
-                    {song?.slice(0, 10) || ''}
-                  </span>
-                  {song && song.length > 10 && (
-                    <div className="relative ml-2 w-28 overflow-hidden">
-                      <div className="whitespace-nowrap animate-[marquee_8s_linear_infinite] text-xs text-white/90">
-                        {song.slice(10)}
-                        <span className="mx-4">•</span>
-                        {song.slice(10)}
+                {song && song.toLowerCase() === 'original sound' ? (
+                  <span className="text-xs font-medium text-white">{song}</span>
+                ) : (
+                  <div className="flex items-center">
+                    <span className="text-xs font-medium text-white">
+                      {song?.slice(0, 10) || ''}
+                    </span>
+                    {song && song.length > 10 && (
+                      <div className="relative ml-2 w-28 overflow-hidden">
+                        <div className="whitespace-nowrap animate-[marquee_8s_linear_infinite] text-xs text-white/90">
+                          {song.slice(10)}
+                          <span className="mx-4">•</span>
+                          {song.slice(10)}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </Link>

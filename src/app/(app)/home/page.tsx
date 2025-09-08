@@ -72,6 +72,7 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
   const { triggerHaptic } = useHapticFeedback();
   const { isMobile } = useDeviceCapabilities();
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [showSoundPrompt, setShowSoundPrompt] = useState(false);
   
   // Handle case where profiles might be null
   const user = clip.profiles || {
@@ -106,13 +107,17 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
 
     // Active
     if (clip.music_preview_url && aud) {
-      // If a music preview is attached, prefer it as background audio
+      // Prefer music preview as background audio; keep video muted
       if (vid) {
-        vid.muted = true; // prevent double audio tracks
+        vid.muted = true;
         vid.play().catch(() => {});
       }
       aud.muted = !soundEnabled;
-      aud.play().catch(err => console.warn('Audio autoplay prevented: ', err));
+      aud.autoplay = true;
+      aud.play().catch(() => {
+        // Show prompt if autoplay blocked
+        setShowSoundPrompt(true);
+      });
       setIsPlaying(true);
       return;
     }
@@ -120,13 +125,13 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
     // No attached music: use original video audio if present
     if (clip.media_type === 'video' && vid) {
       vid.muted = !soundEnabled;
-      vid.play().catch(error => {
-        console.warn('Autoplay prevented: ', error);
+      vid.play().catch(() => {
         setIsPlaying(false);
+        setShowSoundPrompt(true);
       });
       setIsPlaying(true);
     }
-  }, [isActive, clip.media_type, soundEnabled, clip.music_preview_url]);
+  }, [isActive, clip.media_type, clip.music_preview_url, soundEnabled]);
 
   // Extra safety: pause and mute on unmount to avoid lingering audio
   useEffect(() => {
@@ -146,25 +151,37 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
     };
   }, []);
 
-  // One-time unlock of sound on first user gesture
+  // Initialize sound preference from storage
   useEffect(() => {
-    const stored = sessionStorage.getItem('sound_enabled');
-    if (stored === '1') setSoundEnabled(true);
-
-    const unlock = () => {
-      sessionStorage.setItem('sound_enabled', '1');
-      setSoundEnabled(true);
-      if (videoRef.current) {
-        videoRef.current.muted = false;
-        videoRef.current.play().catch(() => {});
+    try {
+      const stored = sessionStorage.getItem('sound_enabled');
+      if (stored === '1') {
+        setSoundEnabled(true);
+      } else {
+        setSoundEnabled(false);
+        setShowSoundPrompt(true);
       }
-      window.removeEventListener('pointerdown', unlock);
-    };
-    if (!stored) {
-      window.addEventListener('pointerdown', unlock, { once: true });
+    } catch {
+      setSoundEnabled(false);
+      setShowSoundPrompt(true);
     }
-    return () => window.removeEventListener('pointerdown', unlock);
   }, []);
+
+  const enableSound = () => {
+    try { sessionStorage.setItem('sound_enabled', '1'); } catch {}
+    setSoundEnabled(true);
+    setShowSoundPrompt(false);
+    // Immediately unmute and play the active media
+    const vid = videoRef.current;
+    const aud = audioRef.current;
+    if (clip.music_preview_url && aud) {
+      aud.muted = false;
+      aud.play().catch(() => {});
+    } else if (clip.media_type === 'video' && vid) {
+      vid.muted = false;
+      vid.play().catch(() => {});
+    }
+  };
 
   const handleVideoError = () => {
     console.error('Video failed to load:', clip.media_url);
@@ -265,6 +282,20 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
         />
       )}
 
+      {/* Enable sound prompt */}
+      {isActive && !soundEnabled && showSoundPrompt && (
+        <div className="absolute top-12 right-3 z-20">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="bg-black/50 text-white hover:bg-black/70 rounded-full px-3 h-8"
+            onClick={enableSound}
+          >
+            Tap to enable sound
+          </Button>
+        </div>
+      )}
+
       {/* Video Controls Overlay */}
       {clip.media_type === 'video' && showControls && (
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
@@ -307,6 +338,7 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
           ref={audioRef}
           loop
           muted={!soundEnabled}
+          autoPlay
           onError={() => console.warn('Audio failed to load')}
         >
           <source src={clip.music_preview_url} type="audio/mpeg" />

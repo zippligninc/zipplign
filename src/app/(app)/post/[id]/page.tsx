@@ -13,6 +13,8 @@ import { toggleSave, checkIsSaved, getSaveCount } from '@/lib/save-actions';
 import { incrementZippclipViews, getZippclipViews, formatViewCount } from '@/lib/view-tracking';
 import { CommentsModal } from '@/components/home/comments-modal';
 import Link from 'next/link';
+import { VideoUIOverlay } from '@/components/home/video-ui-overlay';
+import { useTouchGestures } from '@/hooks/use-touch-gestures';
 
 interface Zippclip {
   id: string;
@@ -21,8 +23,8 @@ interface Zippclip {
   media_type: 'image' | 'video';
   song: string;
   song_avatar_url: string | null;
-  spotify_track_id?: string;
-  spotify_preview_url?: string;
+  music_track_id?: string;
+  music_preview_url?: string;
   created_at: string;
   profiles: {
     id: string;
@@ -63,11 +65,28 @@ function PostContent() {
   const [isAudioMuted, setIsAudioMuted] = useState(true);
   const [audioError, setAudioError] = useState(false);
 
+  // Sequence navigation (from profile grid)
+  const [sequence, setSequence] = useState<string[] | null>(null);
+  const [seqIndex, setSeqIndex] = useState<number | null>(null);
+
   useEffect(() => {
     if (postId) {
       fetchZippclip();
     }
   }, [postId]);
+
+  // Read sequence from sessionStorage if present
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('post_sequence');
+      const idx = sessionStorage.getItem('post_index');
+      if (raw && idx) {
+        const ids = JSON.parse(raw) as string[];
+        setSequence(ids);
+        setSeqIndex(Number(idx));
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (zippclip) {
@@ -240,6 +259,27 @@ function PostContent() {
     }
   };
 
+  // Swipe up/down to navigate sequence
+  const gestures = useTouchGestures({
+    onSwipeUp: () => {
+      if (!sequence || seqIndex == null) return;
+      const next = seqIndex + 1;
+      if (next < sequence.length) {
+        setSeqIndex(next);
+        router.push(`/post/${sequence[next]}`);
+      }
+    },
+    onSwipeDown: () => {
+      if (!sequence || seqIndex == null) return;
+      const prev = seqIndex - 1;
+      if (prev >= 0) {
+        setSeqIndex(prev);
+        router.push(`/post/${sequence[prev]}`);
+      }
+    },
+    threshold: 30,
+  });
+
   const handleAudioError = () => {
     console.error('Audio failed to load');
     setAudioError(true);
@@ -287,7 +327,7 @@ function PostContent() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex" {...gestures}>
         {/* Media Section */}
         <div className="flex-1 relative bg-black">
           {zippclip.media_type === 'video' ? (
@@ -349,7 +389,7 @@ function PostContent() {
           )}
 
           {/* Music Controls */}
-          {(zippclip.song || zippclip.spotify_preview_url) && (
+          {(zippclip.song || zippclip.music_preview_url) && (
             <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-sm p-3 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 relative flex-shrink-0">
@@ -373,7 +413,7 @@ function PostContent() {
                   </p>
                 </div>
                 
-                {zippclip.spotify_preview_url && (
+                {zippclip.music_preview_url && (
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
@@ -404,10 +444,10 @@ function PostContent() {
               </div>
               
               {/* Audio Element */}
-              {zippclip.spotify_preview_url && (
+              {zippclip.music_preview_url && (
                 <audio
                   ref={audioRef}
-                  src={zippclip.spotify_preview_url}
+                  src={zippclip.music_preview_url}
                   onError={handleAudioError}
                   onLoadedData={handleAudioLoad}
                   onEnded={() => setIsAudioPlaying(false)}
@@ -415,10 +455,36 @@ function PostContent() {
               )}
             </div>
           )}
+
+          {/* Mobile Overlay to match feed (PiP, actions, etc.) */}
+          {/* Hidden on md+ screens to keep the two-column desktop layout */}
+          <div className="md:hidden">
+            <VideoUIOverlay
+              id={zippclip.id}
+              user={{
+                id: zippclip.profiles.id,
+                username: zippclip.profiles.username,
+                full_name: zippclip.profiles.full_name,
+                avatar_url: zippclip.profiles.avatar_url,
+              }}
+              description={zippclip.description}
+              song={zippclip.song}
+              likes={likeCount}
+              comments={commentCount}
+              saves={saveCount}
+              shares={0}
+              song_avatar_url={zippclip.song_avatar_url}
+              media_url={zippclip.media_url}
+              media_type={zippclip.media_type}
+              music_preview_url={zippclip.music_preview_url}
+              parentId={(zippclip as any).parent_zippclip_id ?? null}
+              isActive={true}
+            />
+          </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="w-80 bg-black border-l border-gray-800 flex flex-col">
+        {/* Sidebar (desktop/tablet only) */}
+        <div className="hidden md:flex w-80 bg-black border-l border-gray-800 flex-col">
           {/* User Info */}
           <div className="p-4 border-b border-gray-800">
             <div className="flex items-center gap-3">

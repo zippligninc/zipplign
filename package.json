@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002",
+    "dev:monitor": "node scripts/server-health.js",
+    "dev:safe": "npm run dev:monitor & npm run dev",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "health": "curl http://localhost:9002/api/health"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",

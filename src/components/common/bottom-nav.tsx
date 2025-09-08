@@ -9,6 +9,7 @@ import { LogoCreateButton } from './logo';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useUnreadMessages } from '@/hooks/use-unread-messages';
 
 const navItems = [
   { href: '/home', icon: Home, label: 'For You' },
@@ -23,6 +24,7 @@ export function BottomNav() {
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const { unreadCount } = useUnreadMessages();
 
   useEffect(() => {
     setIsClient(true);
@@ -71,6 +73,7 @@ export function BottomNav() {
         {navItems.map((item) => {
           let href = item.href;
           const isActive = pathname === href;
+          const showBadge = item.href === '/inbox' && unreadCount > 0;
 
           const isProtected = item.isCreate || item.href === '/inbox' || item.href === '/profile';
 
@@ -98,7 +101,7 @@ export function BottomNav() {
                 }
               }}
               className={cn(
-                'flex flex-col items-center justify-center h-full w-10 gap-0 p-0.5 text-white/80 transition-colors hover:text-white',
+                'flex flex-col items-center justify-center h-full w-10 gap-0 p-0.5 text-white/80 transition-colors hover:text-white relative',
                 isActive && !item.isCreate && 'text-white'
               )}
             >
@@ -107,7 +110,14 @@ export function BottomNav() {
                     <item.icon className="h-7 w-7 text-primary" />
                  </div>
               ) : (
-                <item.icon className="h-4 w-4" fill={isActive ? 'white' : 'none'} />
+                <div className="relative">
+                  <item.icon className="h-4 w-4" fill={isActive ? 'white' : 'none'} />
+                  {showBadge && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </div>
+                  )}
+                </div>
               )}
               <span className={cn("text-[9px] font-medium", item.isCreate ? "sr-only" : "")}>{item.label}</span>
             </Link>

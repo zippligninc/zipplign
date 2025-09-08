@@ -15,6 +15,8 @@ import { VideoUIOverlay } from '@/components/home/video-ui-overlay';
 import { LazyMedia } from '@/components/optimized/lazy-media';
 import { LoadingOverlay } from '@/components/ui/loading-states';
 import { ErrorBoundary } from '@/components/error/error-boundary';
+import { VideoChain } from '@/components/home/video-chain';
+import { getZipperCount } from '@/lib/zipper-actions';
 // Removed sampleZippclips fallback to use only real data
 function shuffleArray<T>(arr: T[]): T[] {
   const a = arr.slice();
@@ -43,6 +45,7 @@ type Zippclip = {
   media_url: string;
   media_type: 'image' | 'video';
   song_avatar_url: string;
+  music_preview_url?: string;
 };
 
 const navItems = [
@@ -55,6 +58,7 @@ const navItems = [
 
 const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: boolean; onEnded?: () => void }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [showControls, setShowControls] = useState(false);
@@ -84,8 +88,21 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
         setIsPlaying(false);
         videoRef.current.currentTime = 0;
       }
+    } else if (clip.media_type === 'image' && audioRef.current && clip.music_preview_url) {
+      if (isActive) {
+        // For images with audio, autoplay the audio
+        audioRef.current.muted = !soundEnabled;
+        audioRef.current.play().catch(error => {
+          console.warn("Audio autoplay prevented: ", error);
+        });
+      } else {
+        // Stop audio when image is not active
+        audioRef.current.pause();
+        audioRef.current.muted = true;
+        audioRef.current.currentTime = 0;
+      }
     }
-  }, [isActive, clip.media_type, soundEnabled]);
+  }, [isActive, clip.media_type, soundEnabled, clip.music_preview_url]);
 
   useEffect(() => {
     return () => {
@@ -93,6 +110,12 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
         try {
           videoRef.current.pause();
           videoRef.current.muted = true;
+        } catch {}
+      }
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.muted = true;
         } catch {}
       }
     };
@@ -233,8 +256,22 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
         song_avatar_url={clip.song_avatar_url}
         media_url={clip.media_url}
         media_type={clip.media_type}
-        spotify_preview_url={clip.spotify_preview_url}
+        music_preview_url={clip.music_preview_url}
+        parentId={(clip as any).parent_zippclip_id ?? null}
+        isActive={isActive}
       />
+
+      {/* Audio element for images with music */}
+      {clip.media_type === 'image' && clip.music_preview_url && (
+        <audio
+          ref={audioRef}
+          loop
+          muted={!soundEnabled}
+          onError={() => console.warn('Audio failed to load')}
+        >
+          <source src={clip.music_preview_url} type="audio/mpeg" />
+        </audio>
+      )}
     </div>
   );
 };
@@ -339,6 +376,7 @@ export default function ZippersPage() {
           shares,
           song,
           song_avatar_url,
+          music_preview_url,
           profiles:user_id (
             username,
             full_name,
@@ -379,6 +417,7 @@ export default function ZippersPage() {
         media_url: clip.media_url,
         media_type: clip.media_type || 'image',
         song_avatar_url: clip.song_avatar_url || null,
+        music_preview_url: clip.music_preview_url || null,
       }));
 
       setZippclips(shuffleArray(formattedClips));

@@ -27,6 +27,7 @@ export interface Conversation {
     username: string;
     full_name: string;
     avatar_url: string;
+    display_name?: string;
   }[];
   last_message?: {
     content: string;
@@ -43,39 +44,45 @@ export async function getConversations() {
     }
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
+    if (userError) {
+      throw userError;
+    }
+    if (!user) {
       throw new Error('User not authenticated');
     }
 
-    // Get conversations where user is a participant
-    const { data: conversations, error } = await supabase
+    // Simplified approach: Get user's conversation IDs first
+    const { data: userParticipations, error: participationError } = await supabase
+      .from('conversation_participants')
+      .select('conversation_id')
+      .eq('user_id', user.id)
+      .is('left_at', null);
+
+    if (participationError) {
+      throw participationError;
+    }
+
+    if (!userParticipations || userParticipations.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    // Get conversation details
+    const conversationIds = userParticipations.map(p => p.conversation_id);
+    const { data: conversations, error: conversationsError } = await supabase
       .from('conversations')
-      .select(`
-        id,
-        created_at,
-        updated_at,
-        last_message_at,
-        conversation_participants!inner (
-          user_id,
-          profiles:user_id (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        )
-      `)
-      .eq('conversation_participants.user_id', user.id)
-      .is('conversation_participants.left_at', null)
+      .select('id, created_at, updated_at, last_message_at')
+      .in('id', conversationIds)
       .order('last_message_at', { ascending: false });
 
-    if (error) throw error;
+    if (conversationsError) {
+      throw conversationsError;
+    }
 
     // Get last message for each conversation
     const conversationsWithMessages = await Promise.all(
       (conversations || []).map(async (conv) => {
         // Get all participants except current user
-        const { data: allParticipants } = await supabase
+        const { data: allParticipants, error: participantsError } = await supabase
           .from('conversation_participants')
           .select(`
             profiles:user_id (
@@ -87,10 +94,20 @@ export async function getConversations() {
           `)
           .eq('conversation_id', conv.id)
           .is('left_at', null);
+          
+        if (participantsError) {
+          console.error('Participants error for conversation', conv.id, ':', participantsError);
+          // Continue with empty participants rather than failing
+        }
 
         const participants = (allParticipants || [])
           .map(p => p.profiles)
-          .filter(p => p && p.id !== user.id);
+          .filter(p => p && p.id !== user.id && (p.full_name || p.username)) // Ensure we have valid user data
+          .map(p => ({
+            ...p,
+            // Ensure we always have a displayable name
+            display_name: p.full_name || p.username || 'Unknown User'
+          }));
 
         // Get last message
         const { data: lastMessage } = await supabase
@@ -108,16 +125,21 @@ export async function getConversations() {
           .limit(1)
           .single();
 
-        // Get unread count
-        const { count: unreadCount } = await supabase
+        // Get unread count - simplified approach
+        const { data: allMessages } = await supabase
           .from('messages')
-          .select('id', { count: 'exact' })
+          .select('id')
           .eq('conversation_id', conv.id)
           .neq('sender_id', user.id)
-          .eq('is_deleted', false)
-          .not('id', 'in', `(
-            SELECT message_id FROM message_reads WHERE user_id = '${user.id}'
-          )`);
+          .eq('is_deleted', false);
+
+        const { data: readMessages } = await supabase
+          .from('message_reads')
+          .select('message_id')
+          .eq('user_id', user.id);
+
+        const readMessageIds = new Set((readMessages || []).map(r => r.message_id));
+        const unreadCount = (allMessages || []).filter(m => !readMessageIds.has(m.id)).length;
 
         return {
           id: conv.id,
@@ -138,7 +160,14 @@ export async function getConversations() {
     return { success: true, data: conversationsWithMessages };
   } catch (error: any) {
     console.error('Error fetching conversations:', error);
-    return { success: false, error: error.message };
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      full_error: error
+    });
+    return { success: false, error: error.message || 'Unknown error occurred' };
   }
 }
 
@@ -266,11 +295,65 @@ export async function createDirectConversation(otherUserId: string) {
       throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase.rpc('create_direct_conversation', { other_user: otherUserId });
+    // First try to find existing conversation
+    const { data: existingConversations } = await supabase
+      .from('conversations')
+      .select(`
+        id,
+        conversation_participants!inner (
+          user_id
+        )
+      `)
+      .eq('conversation_participants.user_id', user.id);
 
-    if (error) throw error;
+    // Check if any existing conversation has exactly these two users
+    for (const conv of existingConversations || []) {
+      const { data: participants } = await supabase
+        .from('conversation_participants')
+        .select('user_id')
+        .eq('conversation_id', conv.id)
+        .is('left_at', null);
 
-    return { success: true, data: { id: data } };
+      const participantIds = (participants || []).map(p => p.user_id);
+      if (participantIds.length === 2 && 
+          participantIds.includes(user.id) && 
+          participantIds.includes(otherUserId)) {
+        return { success: true, data: { id: conv.id } };
+      }
+    }
+
+    // Create new conversation
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .insert({
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_message_at: new Date().toISOString()
+      })
+      .select('id')
+      .single();
+
+    if (convError) throw convError;
+
+    // Add participants
+    const { error: participantError } = await supabase
+      .from('conversation_participants')
+      .insert([
+        {
+          conversation_id: conversation.id,
+          user_id: user.id,
+          joined_at: new Date().toISOString()
+        },
+        {
+          conversation_id: conversation.id,
+          user_id: otherUserId,
+          joined_at: new Date().toISOString()
+        }
+      ]);
+
+    if (participantError) throw participantError;
+
+    return { success: true, data: { id: conversation.id } };
   } catch (error: any) {
     console.error('Error creating conversation:', error);
     return { success: false, error: error.message };
@@ -289,14 +372,19 @@ export async function markMessagesAsRead(conversationId: string) {
     }
 
     // Get unread messages in this conversation
-    const { data: unreadMessages } = await supabase
+    const { data: allMessages } = await supabase
       .from('messages')
       .select('id')
       .eq('conversation_id', conversationId)
-      .neq('sender_id', user.id)
-      .not('id', 'in', `(
-        SELECT message_id FROM message_reads WHERE user_id = '${user.id}'
-      )`);
+      .neq('sender_id', user.id);
+
+    const { data: readMessages } = await supabase
+      .from('message_reads')
+      .select('message_id')
+      .eq('user_id', user.id);
+
+    const readMessageIds = new Set((readMessages || []).map(r => r.message_id));
+    const unreadMessages = (allMessages || []).filter(m => !readMessageIds.has(m.id));
 
     if (unreadMessages && unreadMessages.length > 0) {
       const readRecords = unreadMessages.map(msg => ({

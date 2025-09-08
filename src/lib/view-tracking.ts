@@ -25,7 +25,7 @@ export async function incrementZippclipViews(zippclipId: string): Promise<ViewTr
       return { success: true, data: { views: 0 } };
     }
 
-    // Try to get the current view count (with fallback if column doesn't exist)
+    // Get the current view count (with fallback if column doesn't exist)
     let currentViews = 0;
     try {
       console.log('Fetching current views for zippclip:', zippclipId);
@@ -86,9 +86,10 @@ export async function incrementZippclipViews(zippclipId: string): Promise<ViewTr
       return { success: true, data: { views: newViews } };
     }
 
-    return { 
-      success: true, 
-      data: { views: verifyData?.views || newViews } 
+    // client hint storage removed (no undefined lsKey)
+    return {
+      success: true,
+      data: { views: verifyData?.views || newViews }
     };
   } catch (error: any) {
     console.error('Error in incrementZippclipViews:', error);

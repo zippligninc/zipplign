@@ -11,14 +11,16 @@ import { useToast } from "@/hooks/use-toast";
 import { getConversations, type Conversation } from "@/lib/messaging";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { useUnreadMessages } from "@/hooks/use-unread-messages";
 
 export default function InboxPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
-    const { toast } = useToast();
+  const { toast } = useToast();
   const router = useRouter();
+  const { refreshUnreadCount } = useUnreadMessages();
 
   useEffect(() => {
     checkAuthAndFetchData();
@@ -50,6 +52,8 @@ export default function InboxPage() {
       const result = await getConversations();
       if (result.success) {
         setConversations(result.data || []);
+        // Refresh unread count when conversations are loaded
+        refreshUnreadCount();
       } else {
         toast({
           title: 'Error',
@@ -81,15 +85,24 @@ export default function InboxPage() {
   };
 
   const getConversationName = (conv: Conversation) => {
-    if (conv.participants.length === 1) {
-      return conv.participants[0].full_name;
+    if (!conv.participants || conv.participants.length === 0) {
+      return 'Unknown Conversation';
     }
-    return conv.participants.map(p => p.full_name).join(', ');
+    if (conv.participants.length === 1) {
+      return conv.participants[0]?.display_name || conv.participants[0]?.full_name || conv.participants[0]?.username || 'Unknown User';
+    }
+    return conv.participants
+      .map(p => p?.display_name || p?.full_name || p?.username || 'Unknown')
+      .filter(name => name !== 'Unknown')
+      .join(', ') || 'Group Chat';
   };
 
   const getConversationAvatar = (conv: Conversation) => {
+    if (!conv.participants || conv.participants.length === 0) {
+      return undefined;
+    }
     if (conv.participants.length === 1) {
-      return conv.participants[0].avatar_url;
+      return conv.participants[0]?.avatar_url;
     }
     return conv.participants[0]?.avatar_url; // For group chats, show first participant
   };

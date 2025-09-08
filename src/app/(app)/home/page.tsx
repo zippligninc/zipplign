@@ -18,6 +18,11 @@ import { ZippclipGridSkeleton, LoadingOverlay } from '@/components/ui/loading-st
 import { ErrorBoundary } from '@/components/error/error-boundary';
 import { PerformanceOptimizer } from '@/lib/performance';
 import { sampleZippclips } from '@/lib/sample-content';
+import { withCache, queryCache } from '@/lib/query-cache';
+import { useOptimizedData } from '@/hooks/use-optimized-data';
+import { errorHandler } from '@/lib/error-handler';
+import { VideoChain } from '@/components/home/video-chain';
+import { getZipperCount } from '@/lib/zipper-actions';
 
 function shuffleArray<T>(arr: T[]): T[] {
   const a = arr.slice();
@@ -45,7 +50,9 @@ type Zippclip = {
   shares: number;
   media_url: string;
   media_type: 'image' | 'video';
-  song_avatar_url: string;
+  song_avatar_url: string | null;
+  music_preview_url?: string | null;
+  parent_zippclip_id?: string | null;
 };
 
 const navItems = [
@@ -58,6 +65,7 @@ const navItems = [
 
 const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: boolean; onEnded?: () => void }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -73,24 +81,52 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
   };
 
   useEffect(() => {
-    if (clip.media_type === 'video' && videoRef.current) {
-      if (isActive) {
-        // Apply sound state
-        videoRef.current.muted = !soundEnabled;
-        videoRef.current.play().catch(error => {
-          console.warn("Autoplay prevented: ", error);
-          setIsPlaying(false);
-        });
-        setIsPlaying(true);
-      } else {
-        // Ensure inactive videos stop audio immediately
-        videoRef.current.pause();
-        videoRef.current.muted = true;
-        setIsPlaying(false);
-        videoRef.current.currentTime = 0;
+    const vid = videoRef.current;
+    const aud = audioRef.current;
+
+    if (!isActive) {
+      // Stop everything when not active
+      if (vid) {
+        try {
+          vid.pause();
+          vid.muted = true;
+          vid.currentTime = 0;
+        } catch {}
       }
+      if (aud) {
+        try {
+          aud.pause();
+          aud.muted = true;
+          aud.currentTime = 0;
+        } catch {}
+      }
+      setIsPlaying(false);
+      return;
     }
-  }, [isActive, clip.media_type, soundEnabled]);
+
+    // Active
+    if (clip.music_preview_url && aud) {
+      // If a music preview is attached, prefer it as background audio
+      if (vid) {
+        vid.muted = true; // prevent double audio tracks
+        vid.play().catch(() => {});
+      }
+      aud.muted = !soundEnabled;
+      aud.play().catch(err => console.warn('Audio autoplay prevented: ', err));
+      setIsPlaying(true);
+      return;
+    }
+
+    // No attached music: use original video audio if present
+    if (clip.media_type === 'video' && vid) {
+      vid.muted = !soundEnabled;
+      vid.play().catch(error => {
+        console.warn('Autoplay prevented: ', error);
+        setIsPlaying(false);
+      });
+      setIsPlaying(true);
+    }
+  }, [isActive, clip.media_type, soundEnabled, clip.music_preview_url]);
 
   // Extra safety: pause and mute on unmount to avoid lingering audio
   useEffect(() => {
@@ -99,6 +135,12 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
         try {
           videoRef.current.pause();
           videoRef.current.muted = true;
+        } catch {}
+      }
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.muted = true;
         } catch {}
       }
     };
@@ -254,8 +296,22 @@ const MediaPlayer = ({ clip, isActive, onEnded }: { clip: Zippclip; isActive: bo
         song_avatar_url={clip.song_avatar_url}
         media_url={clip.media_url}
         media_type={clip.media_type}
-        spotify_preview_url={clip.spotify_preview_url}
+        music_preview_url={clip.music_preview_url}
+        parentId={(clip as any).parent_zippclip_id ?? null}
+        isActive={isActive}
       />
+
+      {/* Audio element for posts with attached music (image or video) */}
+      {clip.music_preview_url && (
+        <audio
+          ref={audioRef}
+          loop
+          muted={!soundEnabled}
+          onError={() => console.warn('Audio failed to load')}
+        >
+          <source src={clip.music_preview_url} type="audio/mpeg" />
+        </audio>
+      )}
     </div>
   );
 };
@@ -299,26 +355,19 @@ export default function HomePage() {
   const [current, setCurrent] = React.useState(0)
   const { triggerHaptic } = useHapticFeedback();
   const { isMobile } = useDeviceCapabilities();
+  
+  // Video chain state
+  const [showVideoChain, setShowVideoChain] = useState(false);
+  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
 
-  // Simplified fetch for zippclips - removing complex optimization that may cause issues
-  const [zippclips, setZippclips] = useState<Zippclip[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<Error | null>(null);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [pullDistance, setPullDistance] = useState(0);
-  const PULL_THRESHOLD = 70;
+  // Optimized data fetching for zippclips
+  const { data: zippclipsData, loading, error: fetchError, refetch: refetchZippclips } = useOptimizedData(
+    'zippclips_home',
+    async () => {
+      if (!supabase) {
+        throw new Error('Database connection not available');
+      }
 
-  const fetchZippclips = React.useCallback(async () => {
-    if (!supabase) {
-      setFetchError(new Error('Database connection not available'));
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setFetchError(null);
-      
       const { data, error } = await supabase
         .from('zippclips')
         .select(`
@@ -332,6 +381,8 @@ export default function HomePage() {
           shares,
           song,
           song_avatar_url,
+          music_preview_url,
+          parent_zippclip_id,
           profiles:user_id (
             username,
             full_name,
@@ -339,7 +390,7 @@ export default function HomePage() {
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(20); // Simple limit instead of pagination
+        .limit(20);
 
       if (error) throw error;
 
@@ -359,31 +410,30 @@ export default function HomePage() {
         media_url: clip.media_url,
         media_type: clip.media_type || 'image',
         song_avatar_url: clip.song_avatar_url || null,
+        music_preview_url: clip.music_preview_url || null,
+        parent_zippclip_id: clip.parent_zippclip_id || null,
       }));
 
-      // Use sample data if no clips found in database
-      if (formattedClips.length === 0) {
-        console.log('No clips found in database, using sample data');
-        setZippclips(shuffleArray(sampleZippclips));
-      } else {
-        setZippclips(shuffleArray(formattedClips));
+      return formattedClips.length > 0 ? formattedClips : shuffleArray(sampleZippclips);
+    },
+    {
+      staleTime: 2 * 60 * 1000, // 2 minutes
+      retry: 3,
+      onError: (error) => {
+        console.error('Error fetching zippclips:', error);
       }
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
-      setFetchError(error);
-      console.error('Error fetching zippclips:', error);
-      // Use sample data as fallback
-      console.log('Using sample data as fallback');
-      setZippclips(shuffleArray(sampleZippclips));
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  );
 
-  // Fetch zippclips on mount
-  React.useEffect(() => {
-    fetchZippclips();
-  }, [fetchZippclips]);
+  const zippclips = zippclipsData || [];
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+  const PULL_THRESHOLD = 70;
+
+  // Pull-to-refresh handler
+  const handleRefresh = React.useCallback(async () => {
+    await refetchZippclips();
+  }, [refetchZippclips]);
 
   // Pull-to-refresh (swipe down at top)
   useEffect(() => {
@@ -411,7 +461,7 @@ export default function HomePage() {
     };
     const onTouchEnd = async () => {
       if (pullDistance >= PULL_THRESHOLD) {
-        await fetchZippclips();
+        await handleRefresh();
       }
       setPullDistance(0);
       pulling = false;
@@ -425,7 +475,7 @@ export default function HomePage() {
       el.removeEventListener('touchmove', onTouchMove as any);
       el.removeEventListener('touchend', onTouchEnd as any);
     };
-  }, [fetchZippclips, pullDistance]);
+  }, [handleRefresh, pullDistance]);
 
   // Track current video index for scroll snap
   React.useEffect(() => {
@@ -507,14 +557,41 @@ export default function HomePage() {
   // Handle fetch errors
   React.useEffect(() => {
     if (fetchError) {
-      console.error('Error fetching zippclips:', fetchError);
-        toast({
-          title: 'Error loading content',
-        description: fetchError.message || 'Failed to load content. Please check your internet connection and try again.',
-          variant: 'destructive',
-        });
+      errorHandler.handleError(fetchError, 'Content Loading');
+    }
+  }, [fetchError]);
+
+  // Show video chain when current video has a parent and zippers
+  React.useEffect(() => {
+    const checkAndShowChain = async () => {
+      if (zippclips.length > 0 && current < zippclips.length) {
+        const currentClip = zippclips[current];
+        if (currentClip && currentClip.id) {
+          setCurrentVideoId(currentClip.id);
+          
+          // Only show chain if this video has a parent (is part of a chain)
+          if (currentClip.parent_zippclip_id) {
+            // Check if there are any zippers for this video
+            try {
+              const zipperResult = await getZipperCount(currentClip.id);
+              if (zipperResult.success && zipperResult.data && zipperResult.data.zippers > 0) {
+                setShowVideoChain(true);
+              } else {
+                setShowVideoChain(false);
+              }
+            } catch (error) {
+              console.error('Error checking zipper count:', error);
+              setShowVideoChain(false);
+            }
+          } else {
+            setShowVideoChain(false);
+          }
+        }
       }
-  }, [fetchError, toast]);
+    };
+
+    checkAndShowChain();
+  }, [current, zippclips]);
 
 
   return (
@@ -561,6 +638,14 @@ export default function HomePage() {
                   <Link href="/create">Create a Zippclip</Link>
               </Button>
           </div>
+        )}
+        
+        {/* Video Chain Component */}
+        {showVideoChain && currentVideoId && (
+          <VideoChain
+            currentVideoId={currentVideoId}
+            onClose={() => setShowVideoChain(false)}
+          />
         )}
     </div>
   );

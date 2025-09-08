@@ -5,6 +5,7 @@ export interface SaveActionResponse {
   data?: {
     saved: boolean;
     saves: number;
+    count?: number;
   };
   error?: string;
 }

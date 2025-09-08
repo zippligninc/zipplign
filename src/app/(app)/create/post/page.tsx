@@ -250,7 +250,7 @@ export default function PostPage() {
             description: caption || '',
             song: selectedMusic ? `${selectedMusic.name} - ${selectedMusic.artist}` : 'Original Sound',
             song_avatar_url: selectedMusic ? selectedMusic.image_url : '',
-            spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null,
+            music_preview_url: selectedMusic ? selectedMusic.preview_url : null,
             parent_zippclip_id: zippReference?.id || null
         });
         
@@ -260,7 +260,7 @@ export default function PostPage() {
              description: caption || '',
              song: selectedMusic ? `${selectedMusic.name} - ${selectedMusic.artist}` : 'Original Sound',
              song_avatar_url: selectedMusic ? selectedMusic.image_url : '',
-             spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null,
+             music_preview_url: selectedMusic ? selectedMusic.preview_url : null,
              parent_zippclip_id: zippReference?.id || null
         });
 

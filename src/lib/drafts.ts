@@ -20,7 +20,7 @@ export interface CreateDraftData {
   description?: string;
   song?: string;
   song_avatar_url?: string;
-  spotify_preview_url?: string | null;
+  music_preview_url?: string | null;
   location_data?: any;
   is_public?: boolean;
 }

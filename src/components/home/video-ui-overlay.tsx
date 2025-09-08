@@ -497,10 +497,13 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
   const handleShare = async () => {
     if (navigator.share) {
       try {
+        const permalink = typeof window !== 'undefined' 
+          ? `${window.location.origin}/post/${id}`
+          : `/post/${id}`;
         await navigator.share({
           title: `Check out this Zippclip by ${user?.full_name || 'Unknown'}`,
           text: description,
-          url: window.location.href,
+          url: permalink,
         });
       } catch (error) {
         // User cancelled or share failed
@@ -509,10 +512,13 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
     } else {
       // Fallback to copying URL
       try {
-        await navigator.clipboard.writeText(window.location.href);
+        const permalink = typeof window !== 'undefined' 
+          ? `${window.location.origin}/post/${id}`
+          : `/post/${id}`;
+        await navigator.clipboard.writeText(permalink);
         toast({
           title: 'Link Copied',
-          description: 'Zippclip link copied to clipboard!',
+          description: 'Post link copied to clipboard!',
         });
       } catch (error) {
         toast({

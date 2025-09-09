@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import type { SimpleTrack } from '@/lib/spotify-simple';
+import { loadBlobUrl, deleteBlob } from '@/lib/media-store';
 
 const OptionButton = ({ icon: Icon, label, value, onClick }: { icon: React.ElementType, label: string, value: string, onClick?: () => void }) => (
     <button onClick={onClick} className="flex items-center justify-between w-full text-left py-3 px-4 hover:bg-muted/50 rounded-lg">
@@ -97,6 +98,9 @@ export default function PostPage() {
         }
       }
 
+      // Prefer IndexedDB stored media
+      const mediaKey = sessionStorage.getItem('mediaKey');
+      const mediaKind = sessionStorage.getItem('mediaKind');
       const image = sessionStorage.getItem('capturedImage');
       const video = sessionStorage.getItem('capturedVideo');
 
@@ -106,7 +110,14 @@ export default function PostPage() {
       console.log('Image length:', image?.length || 0);
       console.log('Video length:', video?.length || 0);
 
-      if (image) {
+      if (mediaKey && mediaKind) {
+        try {
+          const rec = await loadBlobUrl(mediaKey);
+          if (rec) {
+            setMedia({ type: rec.kind, url: rec.url });
+          }
+        } catch {}
+      } else if (image) {
         console.log('Setting media as image');
         setMedia({ type: 'image', url: image });
       } else if (video) {
@@ -300,6 +311,15 @@ export default function PostPage() {
         sessionStorage.removeItem('capturedVideo');
         sessionStorage.removeItem('zipp_reference');
         
+        // Cleanup temp media
+        try {
+          const key = sessionStorage.getItem('mediaKey');
+          if (key) {
+            await deleteBlob(key);
+          }
+          sessionStorage.removeItem('mediaKey');
+          sessionStorage.removeItem('mediaKind');
+        } catch {}
         router.push('/profile');
         router.refresh();
     } catch (error) {

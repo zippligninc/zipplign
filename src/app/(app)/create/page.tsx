@@ -21,6 +21,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { DraftService, CreateDraftData } from '@/lib/drafts';
+import { saveBlob } from '@/lib/media-store';
 
 const RightSidebarButton = ({
   icon: Icon,
@@ -210,22 +211,17 @@ export default function CreatePage() {
         }
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         try {
-          // Prefer object URL to avoid storage quota issues
-          canvas.toBlob((blob) => {
-            try {
-              if (blob) {
-                const objectUrl = URL.createObjectURL(blob);
-                sessionStorage.setItem('capturedImage', objectUrl);
-                sessionStorage.removeItem('capturedVideo');
-                setHasSelectedMedia(true);
-              } else {
-                // Fallback: minimal flag without storing the entire image
-                setHasSelectedMedia(true);
+          canvas.toBlob(async (blob) => {
+            if (blob) {
+              try {
+                const key = await saveBlob('image', blob);
+                sessionStorage.setItem('mediaKey', key);
+                sessionStorage.setItem('mediaKind', 'image');
+              } catch (e) {
+                console.error('IDB save error:', e);
               }
-            } catch (e) {
-              console.error('Error creating object URL:', e);
-              setHasSelectedMedia(true);
             }
+            setHasSelectedMedia(true);
           }, 'image/png');
         } catch (error) {
           console.error("Error storing image:", error);
@@ -343,9 +339,9 @@ export default function CreatePage() {
     if (!isRecording && recordedChunks.length > 0) {
       const blob = new Blob(recordedChunks, { type: 'video/webm' });
       try {
-        const objectUrl = URL.createObjectURL(blob);
-        sessionStorage.setItem('capturedVideo', objectUrl);
-        sessionStorage.removeItem('capturedImage');
+        const key = await saveBlob('video', blob);
+        sessionStorage.setItem('mediaKey', key);
+        sessionStorage.setItem('mediaKind', 'video');
         setHasSelectedMedia(true);
       } catch (error) {
         console.error("Error storing video URL:", error);
@@ -392,13 +388,14 @@ export default function CreatePage() {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const objectUrl = URL.createObjectURL(file);
       if (file.type.startsWith('image/')) {
-        sessionStorage.setItem('capturedImage', objectUrl);
-        sessionStorage.removeItem('capturedVideo');
+        const key = saveBlob('image', file);
+        sessionStorage.setItem('mediaKey', key);
+        sessionStorage.setItem('mediaKind', 'image');
       } else if (file.type.startsWith('video/')) {
-        sessionStorage.setItem('capturedVideo', objectUrl);
-        sessionStorage.removeItem('capturedImage');
+        const key = saveBlob('video', file);
+        sessionStorage.setItem('mediaKey', key);
+        sessionStorage.setItem('mediaKind', 'video');
       } else {
         toast({
           variant: 'destructive',

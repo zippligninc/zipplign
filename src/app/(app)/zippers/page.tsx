@@ -575,6 +575,17 @@ export default function ZippersPage() {
       
       <ErrorBoundary>
         <div className="h-full w-full overflow-y-auto overflow-x-hidden snap-y snap-mandatory snap-always scroll-smooth touch-pan-y">
+          <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2 bg-black/60 backdrop-blur">
+            <span className="text-xs text-white/70">Following</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-white/80"
+              onClick={fetchFollowingZippclips}
+            >
+              Refresh
+            </Button>
+          </div>
           {zippclips.map((clip, index) => (
             <div key={clip.id} className="h-full w-full snap-start">
               <MediaPlayer 

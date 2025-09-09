@@ -338,19 +338,21 @@ export default function CreatePage() {
   useEffect(() => {
     if (!isRecording && recordedChunks.length > 0) {
       const blob = new Blob(recordedChunks, { type: 'video/webm' });
-      try {
-        const key = await saveBlob('video', blob);
-        sessionStorage.setItem('mediaKey', key);
-        sessionStorage.setItem('mediaKind', 'video');
-        setHasSelectedMedia(true);
-      } catch (error) {
-        console.error("Error storing video URL:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not save video.",
-        });
-      }
+      (async () => {
+        try {
+          const key = await saveBlob('video', blob);
+          sessionStorage.setItem('mediaKey', key);
+          sessionStorage.setItem('mediaKind', 'video');
+          setHasSelectedMedia(true);
+        } catch (error) {
+          console.error("Error storing video URL:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not save video.",
+          });
+        }
+      })();
       setRecordedChunks([]);
     }
   }, [isRecording, recordedChunks, router, toast]);
@@ -384,16 +386,16 @@ export default function CreatePage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
       if (file.type.startsWith('image/')) {
-        const key = saveBlob('image', file);
+        const key = await saveBlob('image', file);
         sessionStorage.setItem('mediaKey', key);
         sessionStorage.setItem('mediaKind', 'image');
       } else if (file.type.startsWith('video/')) {
-        const key = saveBlob('video', file);
+        const key = await saveBlob('video', file);
         sessionStorage.setItem('mediaKey', key);
         sessionStorage.setItem('mediaKind', 'video');
       } else {

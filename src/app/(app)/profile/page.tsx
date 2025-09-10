@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
+import { getUserStore } from '@/lib/store-utils';
 
 type Profile = {
   id: string;
@@ -44,6 +45,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [loadingClips, setLoadingClips] = useState(true);
   const [loadingLikes, setLoadingLikes] = useState(true);
+  const [userStore, setUserStore] = useState<any | null>(null);
 
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -147,6 +149,12 @@ export default function ProfilePage() {
           .select('id', { count: 'exact' })
           .in('zippclip_id', clipsData?.map(clip => clip.id) || [])
       ]);
+
+      // Fetch user's store (if any)
+      try {
+        const storeRes = await getUserStore();
+        if (storeRes.success) setUserStore(storeRes.data || null);
+      } catch {}
 
       console.log('Follower counts:', { 
         followers: followersResult.count, 
@@ -390,6 +398,9 @@ export default function ProfilePage() {
               <Link href="/profile/edit">Edit profile</Link>
             </Button>
             <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleFeatureClick('Share Profile')}>Share profile</Button>
+            <Button asChild variant="secondary" size="sm" className="flex-1">
+              <Link href="/creator-store/setup">Create Store</Link>
+            </Button>
             <Button variant="secondary" size="icon" className="h-7 w-7" asChild>
                 <Link href="/add-friends">
                     <UserPlus className="h-4 w-4" />
@@ -440,6 +451,14 @@ export default function ProfilePage() {
           <Button variant="secondary" className="mt-2 h-6 text-xs px-2" asChild>
               <Link href="/profile/edit">+ Add bio</Link>
           </Button>
+        )}
+
+        {userStore && (
+          <div className="mt-2">
+            <Button asChild size="sm" className="h-7">
+              <Link href={`/store/${userStore.id}`}>View my store</Link>
+            </Button>
+          </div>
         )}
 
 

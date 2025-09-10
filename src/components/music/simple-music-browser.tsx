@@ -16,13 +16,57 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
-import { 
-  MUSIC_CATEGORIES,
-  getMusicByCategory,
-  searchMusic,
-  getTrendingMusic,
-  type SimpleTrack
-} from '@/lib/spotify-simple';
+
+type SimpleTrack = {
+  id: string;
+  name: string;
+  artist: string;
+  album: string;
+  duration: string;
+  preview_url: string | null;
+  image_url: string;
+  spotify_url: string;
+};
+
+const MUSIC_CATEGORIES = [
+  { id: 'trending', name: 'Trending Now', description: 'Popular songs everyone is listening to' },
+  { id: 'hip-hop', name: 'Hip Hop', description: 'Latest hip hop and rap tracks' },
+  { id: 'pop', name: 'Pop', description: 'Current pop hits' },
+  { id: 'electronic', name: 'Electronic', description: 'EDM and electronic music' },
+  { id: 'rock', name: 'Rock', description: 'Rock and alternative music' },
+  { id: 'rnb', name: 'R&B', description: 'R&B and soul music' },
+  { id: 'country', name: 'Country', description: 'Country and folk music' },
+  { id: 'latin', name: 'Latin', description: 'Latin and reggaeton' },
+];
+
+const SAMPLE_MUSIC_LIBRARY: SimpleTrack[] = [
+  {
+    id: 'local-1',
+    name: 'Local Track 1',
+    artist: 'Local Artist',
+    album: 'Local Album',
+    duration: '2:30',
+    preview_url: '/audio/preview.mp3',
+    image_url: '/Images/logo.png',
+    spotify_url: '#'
+  }
+];
+
+function getMusicByCategory(categoryId: string): SimpleTrack[] {
+  return SAMPLE_MUSIC_LIBRARY;
+}
+
+function searchMusic(query: string): SimpleTrack[] {
+  if (!query.trim()) return SAMPLE_MUSIC_LIBRARY;
+  const q = query.toLowerCase();
+  return SAMPLE_MUSIC_LIBRARY.filter(t =>
+    t.name.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q) || t.album.toLowerCase().includes(q)
+  );
+}
+
+function getTrendingMusic(): SimpleTrack[] {
+  return SAMPLE_MUSIC_LIBRARY;
+}
 import Image from 'next/image';
 
 interface SimpleMusicBrowserProps {

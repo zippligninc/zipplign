@@ -472,7 +472,16 @@ export default function ProfilePage() {
                         } catch {}
                       }}
                     >
-                      <Image src={clip.media_url} alt="Zippclip" fill className="object-cover" />
+                      {clip.media_type === 'video' ? (
+                        <video
+                          src={clip.media_url}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <Image src={clip.media_url} alt="Zippclip" fill className="object-cover" />
+                      )}
                       {clip.media_type === 'video' && (
                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                           <PlayCircle className="w-8 h-8 text-white/80" />
@@ -533,7 +542,16 @@ export default function ProfilePage() {
                       } catch {}
                     }}
                   >
-                    <Image src={clip.media_url} alt="Liked Zippclip" fill className="object-cover" />
+                    {clip.media_type === 'video' ? (
+                      <video
+                        src={clip.media_url}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <Image src={clip.media_url} alt="Liked Zippclip" fill className="object-cover" />
+                    )}
                     {clip.media_type === 'video' && (
                       <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                         <PlayCircle className="w-8 h-8 text-white/80" />

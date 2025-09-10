@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { toggleLike, checkIsLiked, getLikeCount, getCommentCount } from '@/lib/s
 import { blockUser, checkIfBlocked } from '@/lib/moderation';
 import { incrementZippclipViews, getZippclipViews, formatViewCount } from '@/lib/view-tracking';
 import { toggleSave, checkIsSaved, getSaveCount } from '@/lib/save-actions';
+import { getZipperCount, getZippers, getOriginalVideo } from '@/lib/zipper-actions';
 import { CommentsModal } from './comments-modal';
 import { ReportModal } from '../moderation/report-modal';
 import {
@@ -42,11 +43,15 @@ interface VideoUIOverlayProps {
   media_url: string;
   media_type: 'image' | 'video';
   song_avatar_url: string | null;
-  spotify_track_id?: string;
-  spotify_preview_url?: string;
+  music_track_id?: string;
+  music_preview_url?: string | null;
+  parentId?: string | null;
+  isActive?: boolean;
+  showSoundPrompt?: boolean;
+  onEnableSound?: () => void;
 }
 
-export function VideoUIOverlay({
+export const VideoUIOverlay = React.memo(function VideoUIOverlay({
   id,
   user,
   description,
@@ -58,8 +63,12 @@ export function VideoUIOverlay({
   media_url,
   media_type,
   song_avatar_url,
-  spotify_track_id,
-  spotify_preview_url,
+  music_track_id,
+  music_preview_url,
+  parentId,
+  isActive,
+  showSoundPrompt,
+  onEnableSound,
 }: VideoUIOverlayProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -77,6 +86,10 @@ export function VideoUIOverlay({
   const [saveCount, setSaveCount] = useState(parseInt(saves.toString()) || 0);
   const [isSaving, setIsSaving] = useState(false);
   const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
+  const [zipperCount, setZipperCount] = useState(0);
+  const [zipperPreview, setZipperPreview] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
+  const [originalPreview, setOriginalPreview] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
+  const [originalId, setOriginalId] = useState<string | null>(null);
   
   // Audio state
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -171,7 +184,7 @@ export function VideoUIOverlay({
             // Fetch save count
             const saveCountResult = await getSaveCount(id);
             if (saveCountResult.success && saveCountResult.data) {
-              setSaveCount(saveCountResult.data.count);
+              setSaveCount(saveCountResult.data.saves);
             }
           } catch (error) {
             console.error('Error fetching social action counts:', error);
@@ -195,15 +208,25 @@ export function VideoUIOverlay({
     checkStatus();
   }, [id, user?.id]);
 
-  // Track view when component mounts (only once per session)
+  // Track view when component mounts (only once per device for this clip)
   useEffect(() => {
     const trackView = async () => {
       if (id && !hasTrackedView) {
         try {
+          // Device-level guard to avoid multiple increments from the same device
+          const storageKey = `viewed:${id}`;
+          if (typeof window !== 'undefined' && localStorage.getItem(storageKey) === '1') {
+            setHasTrackedView(true);
+            return;
+          }
+
           const result = await incrementZippclipViews(id);
           if (result.success && result.data) {
             setViewCount(result.data.views);
             setHasTrackedView(true);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(storageKey, '1');
+            }
           }
         } catch (error: any) {
           // Only log meaningful error messages
@@ -214,12 +237,95 @@ export function VideoUIOverlay({
       }
     };
 
-    // Track view after a short delay to ensure the video is actually being viewed
-    const timer = setTimeout(trackView, 2000);
+    // Track view after 3 seconds to ensure real watch time
+    const timer = setTimeout(trackView, 3000);
     return () => clearTimeout(timer);
   }, [id, hasTrackedView]);
 
-  const handleLike = async () => {
+  // Fetch zipper count and preview of latest zipper
+  useEffect(() => {
+    if (!isActive) return;
+    const fetchZipperInfo = async () => {
+      const parentForQuery = parentId || id;
+      if (parentForQuery) {
+        try {
+          const result = await getZipperCount(parentForQuery);
+          if (result.success && result.data) {
+            setZipperCount(result.data.zippers);
+          }
+          // Fetch original (root) preview for the current response
+          const orig = await getOriginalVideo(parentForQuery);
+          if (orig.success && orig.data) {
+            setOriginalPreview({ url: orig.data.media_url, type: orig.data.media_type });
+            setOriginalId(orig.data.id);
+          } else {
+            setOriginalPreview(null);
+            setOriginalId(null);
+          }
+
+          // Fetch latest zipper (child) to show at root
+          const zippers = await getZippers(parentForQuery, 1);
+          if (zippers.success && zippers.data && zippers.data.zippers && zippers.data.zippers.length > 0) {
+            const latest = zippers.data.zippers[0];
+            setZipperPreview({ url: latest.media_url, type: latest.media_type });
+          } else {
+            setZipperPreview(null);
+          }
+        } catch (error: any) {
+          if (error?.message) {
+            console.error('Error fetching zipper count:', error.message);
+          }
+        }
+      }
+    };
+
+    fetchZipperInfo();
+  }, [id, parentId, isActive]);
+
+  // Realtime: update zipper info when children are inserted/deleted for this zippclip
+  useEffect(() => {
+    if (!id || !supabase || !isActive) return;
+
+    const refetch = async () => {
+      try {
+        const parentForQuery = parentId || id;
+        const result = await getZipperCount(parentForQuery);
+        if (result.success && result.data) {
+          setZipperCount(result.data.zippers);
+        }
+
+        const zippers = await getZippers(parentForQuery, 1);
+        if (zippers.success && zippers.data && zippers.data.zippers && zippers.data.zippers.length > 0) {
+          const latest = zippers.data.zippers[0];
+          setZipperPreview({ url: latest.media_url, type: latest.media_type });
+        } else {
+          setZipperPreview(null);
+        }
+      } catch {}
+    };
+
+    // Type guard for non-null supabase already handled at hook entry
+    const client = supabase as NonNullable<typeof supabase>;
+    const channel = client
+      .channel(`zippers:${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'zippclips', filter: `parent_zippclip_id=eq.${parentId || id}` },
+        refetch
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'zippclips', filter: `parent_zippclip_id=eq.${parentId || id}` },
+        refetch
+      )
+      .subscribe();
+
+    return () => {
+      try { client.removeChannel(channel); } catch {}
+    };
+  }, [id, parentId, isActive]);
+
+  const handleLike = useCallback(async () => {
     if (!supabase) {
       toast({
         title: 'Configuration Error',
@@ -274,9 +380,37 @@ export function VideoUIOverlay({
     }
     
     setIsLiking(false);
+  }, [supabase, isLiking, isLiked, id, toast, router]);
+
+  // Wrapper click handlers to prevent clicks from propagating to underlying media
+  const onLikeClick = (e: React.MouseEvent | React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleLike();
+  };
+  const onCommentClick = (e: React.MouseEvent | React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleComment();
+  };
+  const onSaveClick = (e: React.MouseEvent | React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleSave();
+  };
+  const onShareClick = (e: React.MouseEvent | React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleShare();
+  };
+  const onRideClick = (e: React.MouseEvent | React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sessionStorage.setItem('zipp_reference', JSON.stringify({ id, user: user.username, description, song }));
+    window.location.href = '/create';
   };
 
-  const handleComment = async () => {
+  const handleComment = useCallback(async () => {
     if (!supabase) {
       toast({
         title: 'Configuration Error',
@@ -298,9 +432,9 @@ export function VideoUIOverlay({
     }
 
     setShowComments(true);
-  };
+  }, [supabase, toast, router]);
 
-  const handleCommentAdded = async () => {
+  const handleCommentAdded = useCallback(async () => {
     // Optimistic update
     setCommentCount(prev => prev + 1);
     
@@ -313,11 +447,17 @@ export function VideoUIOverlay({
     } catch (error) {
       console.error('Error refreshing comment count:', error);
     }
-  };
+  }, [id]);
 
   // Audio control functions
-  const toggleAudioPlay = () => {
+  const toggleAudioPlay = useCallback(() => {
     if (audioRef.current) {
+      // Ensure source is set
+      if (!audioRef.current.src && music_preview_url) {
+        try {
+          audioRef.current.src = music_preview_url;
+        } catch {}
+      }
       if (isAudioPlaying) {
         audioRef.current.pause();
         setIsAudioPlaying(false);
@@ -330,14 +470,14 @@ export function VideoUIOverlay({
         setIsAudioPlaying(true);
       }
     }
-  };
+  }, [isAudioPlaying]);
 
-  const toggleAudioMute = () => {
+  const toggleAudioMute = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.muted = !isAudioMuted;
       setIsAudioMuted(!isAudioMuted);
     }
-  };
+  }, [isAudioMuted]);
 
   const handleAudioError = () => {
     console.error('Audio failed to load');
@@ -347,6 +487,12 @@ export function VideoUIOverlay({
 
   const handleAudioLoad = () => {
     setAudioError(false);
+    // Attempt autoplay on load
+    if (audioRef.current && music_preview_url) {
+      audioRef.current.play().catch(() => {
+        // ignore if blocked
+      });
+    }
   };
 
   const handleBlockUser = async () => {
@@ -379,10 +525,13 @@ export function VideoUIOverlay({
   const handleShare = async () => {
     if (navigator.share) {
       try {
+        const permalink = typeof window !== 'undefined' 
+          ? `${window.location.origin}/post/${id}`
+          : `/post/${id}`;
         await navigator.share({
           title: `Check out this Zippclip by ${user?.full_name || 'Unknown'}`,
           text: description,
-          url: window.location.href,
+          url: permalink,
         });
       } catch (error) {
         // User cancelled or share failed
@@ -391,10 +540,13 @@ export function VideoUIOverlay({
     } else {
       // Fallback to copying URL
       try {
-        await navigator.clipboard.writeText(window.location.href);
+        const permalink = typeof window !== 'undefined' 
+          ? `${window.location.origin}/post/${id}`
+          : `/post/${id}`;
+        await navigator.clipboard.writeText(permalink);
         toast({
           title: 'Link Copied',
-          description: 'Zippclip link copied to clipboard!',
+          description: 'Post link copied to clipboard!',
         });
       } catch (error) {
         toast({
@@ -452,7 +604,7 @@ export function VideoUIOverlay({
       try {
         const saveCountResult = await getSaveCount(id);
         if (saveCountResult.success && saveCountResult.data) {
-          setSaveCount(saveCountResult.data.count);
+          setSaveCount(saveCountResult.data.saves);
         }
       } catch (error) {
         console.error('Error refreshing save count:', error);
@@ -466,37 +618,47 @@ export function VideoUIOverlay({
 
   return (
     <>
-      {/* Picture-in-Picture Window - Top Left */}
-      <div className="fixed top-16 left-4 z-50">
-        <div className="w-24 h-32 rounded-xl overflow-hidden border-2 border-teal-400/50 shadow-2xl">
-          {media_type === 'video' ? (
-            <video
-              src={media_url}
-              className="w-full h-full object-cover"
-              muted
-              loop
-              autoPlay
-              playsInline
-            />
-          ) : (
-            <Image
-              src={media_url}
-              alt="Preview"
-              width={96}
-              height={128}
-              className="w-full h-full object-cover"
-            />
-          )}
-        </div>
-        {/* Follower Count Display */}
-        <div className="mt-3 text-center">
-          <div>
-            <p className="text-white text-xs font-bold">
-              {formatViewCount(followerCount)} Zippers
-            </p>
+      {/* PiP: show original clip only when current clip is a response AND this card is active */}
+      {isActive && parentId && originalPreview && (
+        <div
+          className="fixed top-10 left-4 z-50 cursor-pointer"
+          onClick={() => {
+            const targetId = originalId ?? (parentId || id);
+            if (targetId) {
+              router.push(`/post/${targetId}`);
+            }
+          }}
+          aria-label="Open original video"
+          role="button"
+        >
+          <div className="w-24 h-32 rounded-xl overflow-hidden border-2 border-teal-400/50 shadow-2xl">
+            {(originalPreview.type) === 'video' ? (
+              <video
+                src={originalPreview.url}
+                className="w-full h-full object-cover"
+                muted
+                loop
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <Image
+                src={originalPreview.url}
+                alt="Preview"
+                width={96}
+                height={128}
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
+          {/* Zipper Count Display */}
+          <div className="mt-3 text-center">
+            <div>
+              <p className="text-white text-xs font-bold">{formatViewCount(zipperCount)} Zipper</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Overlay - Bottom */}
       <div className="absolute bottom-[4.5rem] left-0 right-0 flex items-end justify-between p-4 pb-0 text-white z-10 sm:bottom-[4.5rem] md:bottom-[4.5rem]">
@@ -544,12 +706,45 @@ export function VideoUIOverlay({
         
         <div className="flex items-center gap-2">
           <Link href={`/post/${id}`}>
-            <div className="flex items-center gap-2 cursor-pointer hover:opacity-80">
+            <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 max-w-[70%]">
               <Music className="h-4 w-4 text-teal-400" />
-              <p className="text-xs font-medium truncate text-white">{song}</p>
+              <div className="overflow-hidden">
+                {song && song.toLowerCase() === 'original sound' ? (
+                  <span className="text-xs font-medium text-white">{song}</span>
+                ) : (
+                  <div className="flex items-center">
+                    <span className="text-xs font-medium text-white">
+                      {song?.slice(0, 10) || ''}
+                    </span>
+                    {song && song.length > 10 && (
+                      <div className="relative ml-2 w-36 overflow-hidden">
+                        <div className="whitespace-nowrap animate-[marquee_8s_linear_infinite] text-xs text-white/90">
+                          {song.slice(10)}
+                          <span className="mx-4">•</span>
+                          {song.slice(10)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </Link>
-          {spotify_preview_url && (
+          {showSoundPrompt && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 bg-black/40 text-white hover:bg-black/60 rounded-full"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEnableSound && onEnableSound();
+              }}
+            >
+              Enable sound
+            </Button>
+          )}
+          {music_preview_url && (
             <div className="flex items-center gap-1 ml-1">
               <Button
                 variant="ghost"
@@ -593,9 +788,11 @@ export function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={handleLike}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          onPointerDown={onLikeClick}
           disabled={isLiking}
+          aria-label={isLiked ? 'Unlike' : 'Like'}
+          aria-pressed={isLiked}
         >
           <Heart className={`h-7 w-7 ${isLiked ? 'fill-red-500 text-red-500' : 'fill-white'}`} />
           <span className="text-sm font-bold">{likeCount}</span>
@@ -604,8 +801,9 @@ export function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={handleComment}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          onPointerDown={onCommentClick}
+          aria-label="Comment"
         >
           <MessageCircle className="h-7 w-7 fill-white" />
           <span className="text-sm font-bold">{commentCount}</span>
@@ -614,33 +812,36 @@ export function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={handleSave}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          onPointerDown={onSaveClick}
           disabled={isSaving}
+          aria-label={isSaved ? 'Unsave' : 'Save'}
+          aria-pressed={isSaved}
         >
           <Bookmark className={`h-7 w-7 ${isSaved ? 'fill-yellow-500 text-yellow-500' : 'fill-white'}`} />
           <span className="text-sm font-bold">{saveCount}</span>
         </Button>
-
+        
         {/* Ride My Zipp */}
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full"
-          onClick={() => {
-            sessionStorage.setItem('zipp_reference', JSON.stringify({ id, user: user.username, description, song }));
-            window.location.href = '/create';
-          }}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full"
+          onPointerDown={onRideClick}
+          aria-label="Ride this Zipp"
         >
           <Zap className="h-7 w-7 fill-white" />
-          <span className="text-sm font-bold">Ride</span>
+          {zipperCount > 0 && (
+            <span className="text-sm font-bold">{formatViewCount(zipperCount)}</span>
+          )}
         </Button>
         
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full" 
-          onClick={handleShare}
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          onPointerDown={onShareClick}
+          aria-label="Share"
         >
           <Send className="h-7 w-7 fill-white" />
           <span className="text-sm font-bold">{shares}</span>
@@ -709,23 +910,9 @@ export function VideoUIOverlay({
         contentDescription={description}
       />
 
-      {/* Audio Element for Music - Only render if we have a valid audio URL */}
-      {spotify_preview_url && (
-        <audio
-          ref={audioRef}
-          loop
-          muted={isAudioMuted}
-          onError={handleAudioError}
-          onLoadedData={handleAudioLoad}
-          onEnded={() => setIsAudioPlaying(false)}
-          onPause={() => setIsAudioPlaying(false)}
-          onPlay={() => setIsAudioPlaying(true)}
-        >
-          <source src={spotify_preview_url} type="audio/mpeg" />
-        </audio>
-      )}
+      {/* Overlay-level audio disabled; MediaPlayer controls playback to follow scroll */}
     </>
   );
-}
+});
 
 

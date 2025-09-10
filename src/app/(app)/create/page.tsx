@@ -21,6 +21,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { DraftService, CreateDraftData } from '@/lib/drafts';
+import { saveBlob } from '@/lib/media-store';
 
 const RightSidebarButton = ({
   icon: Icon,
@@ -86,6 +87,8 @@ export default function CreatePage() {
   
   // Zipplign Core Feature: Music Integration
   const [selectedMusic, setSelectedMusic] = useState<any>(null);
+  // Track when media is ready so we can show Next
+  const [hasSelectedMedia, setHasSelectedMedia] = useState(false);
 
 
   useEffect(() => {
@@ -207,19 +210,25 @@ export default function CreatePage() {
           context.scale(-1, 1);
         }
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/png');
-        
         try {
-          sessionStorage.setItem('capturedImage', dataUrl);
-          sessionStorage.removeItem('capturedVideo');
-          // Force music selection step for images
-          router.push('/create/music');
+          canvas.toBlob(async (blob) => {
+            if (blob) {
+              try {
+                const key = await saveBlob('image', blob);
+                sessionStorage.setItem('mediaKey', key);
+                sessionStorage.setItem('mediaKind', 'image');
+              } catch (e) {
+                console.error('IDB save error:', e);
+              }
+            }
+            setHasSelectedMedia(true);
+          }, 'image/png');
         } catch (error) {
           console.error("Error storing image:", error);
           toast({
             variant: "destructive",
             title: "Error",
-            description: "Could not save photo. Storage might be full.",
+            description: "Could not save photo.",
           });
         }
       }
@@ -329,23 +338,21 @@ export default function CreatePage() {
   useEffect(() => {
     if (!isRecording && recordedChunks.length > 0) {
       const blob = new Blob(recordedChunks, { type: 'video/webm' });
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = () => {
-        const base64data = reader.result as string;
+      (async () => {
         try {
-            sessionStorage.setItem('capturedVideo', base64data);
-            sessionStorage.removeItem('capturedImage');
-            router.push('/create/post');
+          const key = await saveBlob('video', blob);
+          sessionStorage.setItem('mediaKey', key);
+          sessionStorage.setItem('mediaKind', 'video');
+          setHasSelectedMedia(true);
         } catch (error) {
-            console.error("Error storing video:", error);
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Could not save video. Storage might be full.",
-            });
+          console.error("Error storing video URL:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not save video.",
+          });
         }
-      };
+      })();
       setRecordedChunks([]);
     }
   }, [isRecording, recordedChunks, router, toast]);
@@ -379,38 +386,35 @@ export default function CreatePage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    console.log('File selected:', file.name, file.type, file.size);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      console.log('Data URL created, length:', dataUrl.length);
-      
+    try {
       if (file.type.startsWith('image/')) {
-        console.log('Storing as image');
-        sessionStorage.setItem('capturedImage', dataUrl);
-        sessionStorage.removeItem('capturedVideo');
-        // Force music selection flow for images
-        router.push('/create/music');
+        const key = await saveBlob('image', file);
+        sessionStorage.setItem('mediaKey', key);
+        sessionStorage.setItem('mediaKind', 'image');
       } else if (file.type.startsWith('video/')) {
-        console.log('Storing as video');
-        sessionStorage.setItem('capturedVideo', dataUrl);
-        sessionStorage.removeItem('capturedImage');
-        router.push('/create/post');
+        const key = await saveBlob('video', file);
+        sessionStorage.setItem('mediaKey', key);
+        sessionStorage.setItem('mediaKind', 'video');
       } else {
         toast({
-          variant: "destructive",
-          title: "Unsupported File Type",
-          description: "Please select an image or video file.",
+          variant: 'destructive',
+          title: 'Unsupported File Type',
+          description: 'Please select an image or video file.',
         });
         return;
       }
-    };
-    reader.readAsDataURL(file);
+      setHasSelectedMedia(true);
+    } catch (e) {
+      console.error('Error creating object URL:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not process selected file.',
+      });
+    }
   };
 
 
@@ -502,6 +506,15 @@ export default function CreatePage() {
               disabled={isDraftSaving}
             >
               {isDraftSaving ? 'Saving...' : 'Save Draft'}
+            </Button>
+          )}
+          {hasSelectedMedia && (
+            <Button
+              size="sm"
+              className="rounded-full bg-white/90 text-black px-3 py-1 h-auto text-xs"
+              onClick={() => router.push('/create/post')}
+            >
+              Next
             </Button>
           )}
         </div>

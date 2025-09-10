@@ -35,7 +35,7 @@ function ConversationContent() {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!conversationId) return;
 
     // Subscribe to real-time messages
@@ -97,9 +97,12 @@ function ConversationContent() {
 
   const fetchConversationInfo = async () => {
     try {
-      if (!supabase || !currentUser) return;
+      if (!supabase) return;
 
-      // Get conversation participants
+      // Get user inline to avoid stale state
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data: participants } = await supabase
         .from('conversation_participants')
         .select(`
@@ -115,14 +118,19 @@ function ConversationContent() {
 
       if (participants) {
         const otherParticipants = participants
-          .filter(p => p.profiles?.id !== currentUser.id)
-          .map(p => p.profiles);
-        
+          .map(p => p.profiles)
+          .filter(p => p && p.id !== user.id);
+
+        const name = otherParticipants.length === 1
+          ? (otherParticipants[0]?.full_name || otherParticipants[0]?.username || 'Unknown User')
+          : otherParticipants
+              .map(p => p?.full_name || p?.username)
+              .filter(Boolean)
+              .join(', ') || 'Group Chat';
+
         setConversationInfo({
           participants: otherParticipants,
-          name: otherParticipants.length === 1 
-            ? otherParticipants[0]?.full_name 
-            : otherParticipants.map(p => p?.full_name).join(', ')
+          name,
         });
       }
     } catch (error) {
@@ -136,7 +144,7 @@ function ConversationContent() {
 
     setSending(true);
     const messageContent = newMessage.trim();
-    setNewMessage('');
+        setNewMessage('');
 
     try {
       const result = await sendMessage(conversationId, messageContent);
@@ -205,27 +213,27 @@ function ConversationContent() {
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b bg-background">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-5 w-5" />
-          </Button>
+                </Button>
           
-          <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={conversationInfo?.participants[0]?.avatar_url} />
+              <AvatarImage src={conversationInfo?.participants?.[0]?.avatar_url} />
               <AvatarFallback>
-                {conversationInfo?.name?.charAt(0) || '?'}
+                {(conversationInfo?.name || '?').charAt(0)}
               </AvatarFallback>
-            </Avatar>
+                    </Avatar>
             <div>
               <h1 className="font-semibold text-sm">
-                {conversationInfo?.name || 'Loading...'}
+                {conversationInfo?.name || 'Unknown Conversation'}
               </h1>
               <p className="text-xs text-muted-foreground">
                 {conversationInfo?.participants?.length === 1 ? 'Active now' : `${conversationInfo?.participants?.length || 0} participants`}
               </p>
             </div>
           </div>
-        </div>
+                </div>
 
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon">
@@ -234,11 +242,11 @@ function ConversationContent() {
           <Button variant="ghost" size="icon">
             <Video className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon">
             <MoreVertical className="h-5 w-5" />
-          </Button>
+                </Button>
         </div>
-      </header>
+            </header>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -254,7 +262,7 @@ function ConversationContent() {
             const isOwnMessage = message.is_own_message;
             const showAvatar = !isOwnMessage && (!prevMessage || prevMessage.sender.id !== message.sender.id || showDate);
 
-            return (
+                                return (
               <div key={message.id}>
                 {/* Date separator */}
                 {showDate && (
@@ -262,7 +270,7 @@ function ConversationContent() {
                     <span className="text-xs text-muted-foreground bg-background px-3 py-1 rounded-full border">
                       {formatDateSeparator(message.created_at)}
                     </span>
-                  </div>
+                                            </div>
                 )}
 
                 {/* Message */}
@@ -270,14 +278,14 @@ function ConversationContent() {
                   {!isOwnMessage && (
                     <div className="w-8">
                       {showAvatar && (
-                        <Avatar className="h-8 w-8">
+                                                <Avatar className="h-8 w-8">
                           <AvatarImage src={message.sender.avatar_url} />
                           <AvatarFallback>
                             {message.sender.full_name.charAt(0)}
                           </AvatarFallback>
-                        </Avatar>
+                                                </Avatar>
                       )}
-                    </div>
+                                            </div>
                   )}
 
                   <div className={`max-w-[70%] ${isOwnMessage ? 'order-2' : ''}`}>
@@ -295,19 +303,19 @@ function ConversationContent() {
                       }`}
                     >
                       <p className="text-sm">{message.content}</p>
-                    </div>
+                                        </div>
                     
                     <p className={`text-xs text-muted-foreground mt-1 ${isOwnMessage ? 'text-right' : 'ml-2'}`}>
                       {formatTime(message.created_at)}
                     </p>
-                  </div>
-                </div>
-              </div>
-            );
+                                        </div>
+                                        </div>
+                                    </div>
+                                );
           })
         )}
         <div ref={messagesEndRef} />
-      </div>
+                    </div>
 
       {/* Message Input */}
       <div className="p-4 border-t bg-background">
@@ -318,22 +326,22 @@ function ConversationContent() {
           
           <Button type="button" variant="ghost" size="icon">
             <Camera className="h-5 w-5" />
-          </Button>
+                    </Button>
           
           <div className="flex-1">
-            <Input
+                    <Input
               ref={inputRef}
               placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
               disabled={sending}
               className="rounded-full"
-            />
+                    />
           </div>
           
-          <Button 
+                    <Button
             type="submit" 
-            size="icon" 
+                        size="icon"
             disabled={!newMessage.trim() || sending}
             className="rounded-full"
           >
@@ -342,11 +350,11 @@ function ConversationContent() {
             ) : (
               <Send className="h-4 w-4" />
             )}
-          </Button>
+                    </Button>
         </form>
-      </div>
-    </div>
-  );
+                </div>
+        </div>
+    );
 }
 
 export default function ConversationPage() {

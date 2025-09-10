@@ -13,6 +13,8 @@ import { toggleSave, checkIsSaved, getSaveCount } from '@/lib/save-actions';
 import { incrementZippclipViews, getZippclipViews, formatViewCount } from '@/lib/view-tracking';
 import { CommentsModal } from '@/components/home/comments-modal';
 import Link from 'next/link';
+import { VideoUIOverlay } from '@/components/home/video-ui-overlay';
+import { useTouchGestures } from '@/hooks/use-touch-gestures';
 
 interface Zippclip {
   id: string;
@@ -21,8 +23,8 @@ interface Zippclip {
   media_type: 'image' | 'video';
   song: string;
   song_avatar_url: string | null;
-  spotify_track_id?: string;
-  spotify_preview_url?: string;
+  music_track_id?: string;
+  music_preview_url?: string;
   created_at: string;
   profiles: {
     id: string;
@@ -62,6 +64,13 @@ function PostContent() {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isAudioMuted, setIsAudioMuted] = useState(true);
   const [audioError, setAudioError] = useState(false);
+  // Sound preference (shared with feed)
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [showSoundPrompt, setShowSoundPrompt] = useState(false);
+
+  // Sequence navigation (from profile grid)
+  const [sequence, setSequence] = useState<string[] | null>(null);
+  const [seqIndex, setSeqIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (postId) {
@@ -69,12 +78,65 @@ function PostContent() {
     }
   }, [postId]);
 
+  // Read sequence from sessionStorage if present
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('post_sequence');
+      const idx = sessionStorage.getItem('post_index');
+      if (raw && idx) {
+        const ids = JSON.parse(raw) as string[];
+        setSequence(ids);
+        setSeqIndex(Number(idx));
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (zippclip) {
       checkStatus();
-      trackView();
+      // Delay view increment by 3s regardless of audio state
+      const timer = setTimeout(() => {
+        trackView();
+      }, 3000);
+      return () => clearTimeout(timer);
     }
   }, [zippclip]);
+
+  // Init sound preference
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('sound_enabled');
+      if (stored === '1') {
+        setSoundEnabled(true);
+        setIsMuted(false);
+        setIsAudioMuted(false);
+        setShowSoundPrompt(false);
+      } else {
+        setSoundEnabled(false);
+        setIsMuted(true);
+        setIsAudioMuted(true);
+        setShowSoundPrompt(true);
+      }
+    } catch {}
+  }, []);
+
+  // Unify playback: prefer music preview if present; else use video audio
+  useEffect(() => {
+    if (!zippclip) return;
+    const vid = videoRef.current;
+    const aud = audioRef.current;
+    if (zippclip.music_preview_url && aud) {
+      if (vid) {
+        vid.muted = true;
+        vid.play().catch(() => {});
+      }
+      aud.muted = !soundEnabled;
+      aud.play().catch(() => setShowSoundPrompt(true));
+    } else if (zippclip.media_type === 'video' && vid) {
+      vid.muted = !soundEnabled;
+      vid.play().catch(() => setShowSoundPrompt(true));
+    }
+  }, [zippclip?.id, zippclip?.music_preview_url, zippclip?.media_type, soundEnabled]);
 
   const fetchZippclip = async () => {
     try {
@@ -240,6 +302,27 @@ function PostContent() {
     }
   };
 
+  // Swipe up/down to navigate sequence
+  const gestures = useTouchGestures({
+    onSwipeUp: () => {
+      if (!sequence || seqIndex == null) return;
+      const next = seqIndex + 1;
+      if (next < sequence.length) {
+        setSeqIndex(next);
+        router.push(`/post/${sequence[next]}`);
+      }
+    },
+    onSwipeDown: () => {
+      if (!sequence || seqIndex == null) return;
+      const prev = seqIndex - 1;
+      if (prev >= 0) {
+        setSeqIndex(prev);
+        router.push(`/post/${sequence[prev]}`);
+      }
+    },
+    threshold: 30,
+  });
+
   const handleAudioError = () => {
     console.error('Audio failed to load');
     setAudioError(true);
@@ -247,6 +330,22 @@ function PostContent() {
 
   const handleAudioLoad = () => {
     setAudioError(false);
+  };
+
+  const enableSound = () => {
+    try { sessionStorage.setItem('sound_enabled', '1'); } catch {}
+    setSoundEnabled(true);
+    setIsMuted(false);
+    setIsAudioMuted(false);
+    setShowSoundPrompt(false);
+    // Attempt to play whichever medium applies
+    if (zippclip?.music_preview_url && audioRef.current) {
+      audioRef.current.muted = false;
+      audioRef.current.play().catch(() => {});
+    } else if (videoRef.current) {
+      videoRef.current.muted = false;
+      videoRef.current.play().catch(() => {});
+    }
   };
 
   if (loading) {
@@ -287,7 +386,7 @@ function PostContent() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex" {...gestures}>
         {/* Media Section */}
         <div className="flex-1 relative bg-black">
           {zippclip.media_type === 'video' ? (
@@ -349,7 +448,7 @@ function PostContent() {
           )}
 
           {/* Music Controls */}
-          {(zippclip.song || zippclip.spotify_preview_url) && (
+          {(zippclip.song || zippclip.music_preview_url) && (
             <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-sm p-3 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 relative flex-shrink-0">
@@ -372,8 +471,19 @@ function PostContent() {
                     {zippclip.song || 'Original Sound'}
                   </p>
                 </div>
+
+               {(!soundEnabled && showSoundPrompt) && (
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   className="h-7 px-2 bg-black/40 text-white rounded-full"
+                   onClick={(e) => { e.stopPropagation(); enableSound(); }}
+                 >
+                   Enable sound
+                 </Button>
+               )}
                 
-                {zippclip.spotify_preview_url && (
+                {zippclip.music_preview_url && (
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
@@ -404,21 +514,51 @@ function PostContent() {
               </div>
               
               {/* Audio Element */}
-              {zippclip.spotify_preview_url && (
+              {zippclip.music_preview_url && (
                 <audio
                   ref={audioRef}
-                  src={zippclip.spotify_preview_url}
+                  src={zippclip.music_preview_url}
                   onError={handleAudioError}
                   onLoadedData={handleAudioLoad}
                   onEnded={() => setIsAudioPlaying(false)}
+                  muted={!soundEnabled}
+                  autoPlay
                 />
               )}
             </div>
           )}
+
+          {/* Mobile Overlay to match feed (PiP, actions, etc.) */}
+          {/* Hidden on md+ screens to keep the two-column desktop layout */}
+          <div className="md:hidden">
+            <VideoUIOverlay
+              id={zippclip.id}
+              user={{
+                id: zippclip.profiles.id,
+                username: zippclip.profiles.username,
+                full_name: zippclip.profiles.full_name,
+                avatar_url: zippclip.profiles.avatar_url,
+              }}
+              description={zippclip.description}
+              song={zippclip.song}
+              likes={likeCount}
+              comments={commentCount}
+              saves={saveCount}
+              shares={0}
+              song_avatar_url={zippclip.song_avatar_url}
+              media_url={zippclip.media_url}
+              media_type={zippclip.media_type}
+              music_preview_url={zippclip.music_preview_url}
+              parentId={(zippclip as any).parent_zippclip_id ?? null}
+              isActive={true}
+              showSoundPrompt={!soundEnabled && showSoundPrompt}
+              onEnableSound={enableSound}
+            />
+          </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="w-80 bg-black border-l border-gray-800 flex flex-col">
+        {/* Sidebar (desktop/tablet only) */}
+        <div className="hidden md:flex w-80 bg-black border-l border-gray-800 flex-col">
           {/* User Info */}
           <div className="p-4 border-b border-gray-800">
             <div className="flex items-center gap-3">
@@ -477,9 +617,11 @@ function PostContent() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-auto p-0"
+                  className="h-11 w-11 p-0"
                   onClick={handleLike}
                   disabled={isLiking}
+                  aria-label={isLiked ? 'Unlike' : 'Like'}
+                  aria-pressed={isLiked}
                 >
                   <Heart className={`h-6 w-6 ${isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`} />
                 </Button>
@@ -492,8 +634,9 @@ function PostContent() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-auto p-0"
+                  className="h-11 w-11 p-0"
                   onClick={() => setShowComments(true)}
+                  aria-label="Comment"
                 >
                   <MessageCircle className="h-6 w-6 text-white" />
                 </Button>
@@ -506,9 +649,11 @@ function PostContent() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-auto p-0"
+                  className="h-11 w-11 p-0"
                   onClick={handleSave}
                   disabled={isSaving}
+                  aria-label={isSaved ? 'Unsave' : 'Save'}
+                  aria-pressed={isSaved}
                 >
                   <Bookmark className={`h-6 w-6 ${isSaved ? 'fill-white text-white' : 'text-white'}`} />
                 </Button>
@@ -521,8 +666,9 @@ function PostContent() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-auto p-0"
+                  className="h-11 w-11 p-0"
                   onClick={handleShare}
+                  aria-label="Share"
                 >
                   <Share2 className="h-6 w-6 text-white" />
                 </Button>

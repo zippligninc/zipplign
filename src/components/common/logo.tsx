@@ -44,7 +44,7 @@ export function LogoXLarge({ className }: { className?: string }) {
 export function LogoCreateButton({ className }: { className?: string }) {
   return (
     <Image
-      src="/Images/logo.png"
+      src="/Images/CR%20BT.jpg"
       alt="Zipplign Logo"
       width={28}
       height={28}

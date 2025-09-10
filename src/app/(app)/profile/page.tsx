@@ -9,10 +9,12 @@ import { PenSquare, UserPlus, Plus, Loader2, PlayCircle, Settings } from 'lucide
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { formatViewCount } from '@/lib/view-tracking';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
+import { getUserStore } from '@/lib/store-utils';
 
 type Profile = {
   id: string;
@@ -24,6 +26,7 @@ type Profile = {
   zipping_count: number;
   zippers_count: number;
   likes_count: number;
+  views_count: number;
 } | null;
 
 type Zippclip = {
@@ -38,8 +41,11 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile>(null);
   const [zippclips, setZippclips] = useState<Zippclip[]>([]);
+  const [likedClips, setLikedClips] = useState<Zippclip[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingClips, setLoadingClips] = useState(true);
+  const [loadingLikes, setLoadingLikes] = useState(true);
+  const [userStore, setUserStore] = useState<any | null>(null);
 
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,6 +54,7 @@ export default function ProfilePage() {
       console.log('Fetching profile data for user:', user.id);
       setLoading(true);
       setLoadingClips(true);
+      setLoadingLikes(true);
       
       // Fetch profile data
       const { data: profileData, error: profileError } = await supabase
@@ -81,10 +88,10 @@ export default function ProfilePage() {
         setProfile(defaultProfile);
       }
       
-      // Fetch zippclips
+      // Fetch zippclips (my posts)
       const { data: clipsData, error: clipsError } = await supabase
         .from('zippclips')
-        .select('id, media_url, media_type')
+        .select('id, media_url, media_type, views')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -95,10 +102,36 @@ export default function ProfilePage() {
         throw clipsError;
       }
       
-      if (clipsData) {
-        setZippclips(clipsData);
+      const clipList = clipsData || [];
+      if (clipList) {
+        setZippclips(clipList.map(c => ({ id: c.id, media_url: c.media_url, media_type: c.media_type })));
       } else {
         setZippclips([]);
+      }
+      const totalViews = (clipList || []).reduce((sum: number, c: any) => sum + (c.views || 0), 0);
+
+      // Fetch liked clips (videos I liked)
+      const { data: likesData, error: likedErr } = await supabase
+        .from('likes')
+        .select(`
+          zippclips:zippclip_id (
+            id,
+            media_url,
+            media_type
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (likedErr) {
+        console.error('Liked clips error:', likedErr);
+        setLikedClips([]);
+      } else {
+        const formatted = (likesData || [])
+          .map((row: any) => row.zippclips)
+          .filter((z: any) => z)
+          .map((z: any) => ({ id: z.id, media_url: z.media_url, media_type: z.media_type }));
+        setLikedClips(formatted);
       }
 
       // Fetch real-time follower counts
@@ -117,6 +150,12 @@ export default function ProfilePage() {
           .in('zippclip_id', clipsData?.map(clip => clip.id) || [])
       ]);
 
+      // Fetch user's store (if any)
+      try {
+        const storeRes = await getUserStore();
+        if (storeRes.success) setUserStore(storeRes.data || null);
+      } catch {}
+
       console.log('Follower counts:', { 
         followers: followersResult.count, 
         following: followingResult.count, 
@@ -127,9 +166,10 @@ export default function ProfilePage() {
       if (profileData) {
         setProfile({
           ...profileData,
-          zipping_count: clipsData?.length || 0,
+          zipping_count: followingResult.count || 0, // zipping = number of users I follow
           zippers_count: followersResult.count || 0,
-          likes_count: likesResult.count || 0
+          likes_count: likesResult.count || 0,
+          views_count: totalViews
         });
       } else {
         // Update default profile with real-time counts
@@ -140,9 +180,10 @@ export default function ProfilePage() {
           avatar_url: user.user_metadata?.avatar_url || '',
           bio: '',
           cover_url: '',
-          zipping_count: clipsData?.length || 0,
+          zipping_count: followingResult.count || 0, // zipping = following count
           zippers_count: followersResult.count || 0,
-          likes_count: likesResult.count || 0
+          likes_count: likesResult.count || 0,
+          views_count: totalViews
         };
         setProfile(defaultProfile);
       }
@@ -156,6 +197,7 @@ export default function ProfilePage() {
       console.log('Setting loading to false');
       setLoading(false);
       setLoadingClips(false);
+      setLoadingLikes(false);
     }
   }, [toast]);
 
@@ -356,6 +398,9 @@ export default function ProfilePage() {
               <Link href="/profile/edit">Edit profile</Link>
             </Button>
             <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleFeatureClick('Share Profile')}>Share profile</Button>
+            <Button asChild variant="secondary" size="sm" className="flex-1">
+              <Link href="/creator-store/setup">Create Store</Link>
+            </Button>
             <Button variant="secondary" size="icon" className="h-7 w-7" asChild>
                 <Link href="/add-friends">
                     <UserPlus className="h-4 w-4" />
@@ -378,6 +423,11 @@ export default function ProfilePage() {
                 <div>
                     <p className="font-bold text-xs">{profile?.likes_count ?? 0}</p>
                     <p className="text-[10px] text-muted-foreground">Like</p>
+                </div>
+                <div className="border-l border-border h-5 self-center" />
+                <div>
+                    <p className="font-bold text-xs">{formatViewCount(profile?.views_count ?? 0)}</p>
+                    <p className="text-[10px] text-muted-foreground">views</p>
                 </div>
             </div>
             <Button 
@@ -403,6 +453,14 @@ export default function ProfilePage() {
           </Button>
         )}
 
+        {userStore && (
+          <div className="mt-2">
+            <Button asChild size="sm" className="h-7">
+              <Link href={`/store/${userStore.id}`}>View my store</Link>
+            </Button>
+          </div>
+        )}
+
 
         <Tabs defaultValue="zippclip" className="w-full mt-3">
           <TabsList className="grid w-full grid-cols-5 bg-transparent border-b">
@@ -419,15 +477,37 @@ export default function ProfilePage() {
               </div>
             ) : zippclips.length > 0 ? (
                 <div className="grid grid-cols-3 gap-0.5">
-                  {zippclips.map(clip => (
-                    <div key={clip.id} className="relative aspect-[9/16] bg-muted">
+                  {zippclips.map((clip, idx) => (
+                    <Link
+                      key={clip.id}
+                      href={`/post/${clip.id}`}
+                      className="relative aspect-[9/16] bg-muted block"
+                      onClick={() => {
+                        try {
+                          const ids = zippclips.map(c => c.id);
+                          sessionStorage.setItem('post_sequence', JSON.stringify(ids));
+                          sessionStorage.setItem('post_index', String(idx));
+                          sessionStorage.setItem('post_context', 'profile:zippclips');
+                        } catch {}
+                      }}
+                    >
+                      {clip.media_type === 'video' ? (
+                        <video
+                          src={clip.media_url}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : (
                         <Image src={clip.media_url} alt="Zippclip" fill className="object-cover" />
-                        {clip.media_type === 'video' && (
-                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                <PlayCircle className="w-8 h-8 text-white/80" />
-                            </div>
-                        )}
-                    </div>
+                      )}
+                      {clip.media_type === 'video' && (
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                          <PlayCircle className="w-8 h-8 text-white/80" />
+                        </div>
+                      )}
+                    </Link>
                   ))}
                 </div>
             ) : (
@@ -462,7 +542,48 @@ export default function ProfilePage() {
             <div className="text-center py-8 text-muted-foreground text-xs">No private videos.</div>
           </TabsContent>
           <TabsContent value="likes">
+            {loadingLikes ? (
+              <div className="grid grid-cols-3 gap-0.5">
+                {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="aspect-[9/16]" />)}
+              </div>
+            ) : likedClips.length > 0 ? (
+              <div className="grid grid-cols-3 gap-0.5">
+                {likedClips.map((clip, idx) => (
+                  <Link
+                    key={clip.id}
+                    href={`/post/${clip.id}`}
+                    className="relative aspect-[9/16] bg-muted block"
+                    onClick={() => {
+                      try {
+                        const ids = likedClips.map(c => c.id);
+                        sessionStorage.setItem('post_sequence', JSON.stringify(ids));
+                        sessionStorage.setItem('post_index', String(idx));
+                        sessionStorage.setItem('post_context', 'profile:likes');
+                      } catch {}
+                    }}
+                  >
+                    {clip.media_type === 'video' ? (
+                      <video
+                        src={clip.media_url}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <Image src={clip.media_url} alt="Liked Zippclip" fill className="object-cover" />
+                    )}
+                    {clip.media_type === 'video' && (
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        <PlayCircle className="w-8 h-8 text-white/80" />
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            ) : (
               <div className="text-center py-8 text-muted-foreground text-xs">No liked videos.</div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import type { SimpleTrack } from '@/lib/spotify-simple';
+import { loadBlobUrl, deleteBlob } from '@/lib/media-store';
 
 const OptionButton = ({ icon: Icon, label, value, onClick }: { icon: React.ElementType, label: string, value: string, onClick?: () => void }) => (
     <button onClick={onClick} className="flex items-center justify-between w-full text-left py-3 px-4 hover:bg-muted/50 rounded-lg">
@@ -97,6 +98,9 @@ export default function PostPage() {
         }
       }
 
+      // Prefer IndexedDB stored media
+      const mediaKey = sessionStorage.getItem('mediaKey');
+      const mediaKind = sessionStorage.getItem('mediaKind');
       const image = sessionStorage.getItem('capturedImage');
       const video = sessionStorage.getItem('capturedVideo');
 
@@ -106,7 +110,14 @@ export default function PostPage() {
       console.log('Image length:', image?.length || 0);
       console.log('Video length:', video?.length || 0);
 
-      if (image) {
+      if (mediaKey && mediaKind) {
+        try {
+          const rec = await loadBlobUrl(mediaKey);
+          if (rec) {
+            setMedia({ type: rec.kind, url: rec.url });
+          }
+        } catch {}
+      } else if (image) {
         console.log('Setting media as image');
         setMedia({ type: 'image', url: image });
       } else if (video) {
@@ -145,6 +156,21 @@ export default function PostPage() {
       }
       return new Blob([u8arr], {type:mime});
   }
+
+  // Helper: get Blob from a URL that may be object URL or data URL
+  const getBlobFromUrl = async (url: string): Promise<Blob> => {
+    if (url.startsWith('blob:')) {
+      // Fetch the blob from the object URL
+      const res = await fetch(url);
+      return await res.blob();
+    }
+    if (url.startsWith('data:')) {
+      return dataURLtoBlob(url);
+    }
+    // Remote URL in storage: download it
+    const res = await fetch(url);
+    return await res.blob();
+  };
 
   // Zipplign Core Feature: Validate video duration
   const validateVideoDuration = (videoBlob: Blob): Promise<boolean> => {
@@ -199,7 +225,7 @@ export default function PostPage() {
         console.log('Media type:', media.type);
         console.log('Media URL length:', media.url.length);
         
-        const blob = dataURLtoBlob(media.url);
+        const blob = await getBlobFromUrl(media.url);
         console.log('Blob created:', blob.type, blob.size);
         
         // Zipplign Core Feature: Validate video duration before upload
@@ -248,9 +274,9 @@ export default function PostPage() {
             media_url: publicUrl,
             media_type: media.type,
             description: caption || '',
-            song: selectedMusic ? `${selectedMusic.name} - ${selectedMusic.artist}` : 'Original Sound',
+            song: selectedMusic ? selectedMusic.name : 'Original Sound',
             song_avatar_url: selectedMusic ? selectedMusic.image_url : '',
-            spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null,
+            music_preview_url: selectedMusic ? selectedMusic.preview_url : null,
             parent_zippclip_id: zippReference?.id || null
         });
         
@@ -258,9 +284,9 @@ export default function PostPage() {
              media_url: publicUrl,
              media_type: media.type,
              description: caption || '',
-             song: selectedMusic ? `${selectedMusic.name} - ${selectedMusic.artist}` : 'Original Sound',
+             song: selectedMusic ? selectedMusic.name : 'Original Sound',
              song_avatar_url: selectedMusic ? selectedMusic.image_url : '',
-             spotify_preview_url: selectedMusic ? selectedMusic.preview_url : null,
+             music_preview_url: selectedMusic ? selectedMusic.preview_url : null,
              parent_zippclip_id: zippReference?.id || null
         });
 
@@ -285,6 +311,15 @@ export default function PostPage() {
         sessionStorage.removeItem('capturedVideo');
         sessionStorage.removeItem('zipp_reference');
         
+        // Cleanup temp media
+        try {
+          const key = sessionStorage.getItem('mediaKey');
+          if (key) {
+            await deleteBlob(key);
+          }
+          sessionStorage.removeItem('mediaKey');
+          sessionStorage.removeItem('mediaKind');
+        } catch {}
         router.push('/profile');
         router.refresh();
     } catch (error) {
@@ -364,16 +399,16 @@ export default function PostPage() {
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-center gap-3">
               <Image
-                src={selectedMusic.album.images[0]?.url || '/placeholder-album.png'}
-                alt={selectedMusic.album.name}
+                src={selectedMusic.image_url || '/placeholder-album.png'}
+                alt={selectedMusic.album || 'Selected Music'}
                 width={40}
                 height={40}
                 className="rounded-md"
               />
               <div className="flex-1">
                 <p className="text-sm font-medium text-green-700">{selectedMusic.name}</p>
-                <p className="text-xs text-green-600">{selectedMusic.artists.map(a => a.name).join(', ')}</p>
-                <p className="text-xs text-green-500">{selectedMusic.album.name}</p>
+                <p className="text-xs text-green-600">{selectedMusic.artist}</p>
+                <p className="text-xs text-green-500">{selectedMusic.album}</p>
               </div>
               <Button
                 variant="ghost"

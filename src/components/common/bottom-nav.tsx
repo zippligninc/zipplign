@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useUnreadMessages } from '@/hooks/use-unread-messages';
+import Image from 'next/image';
 
 const navItems = [
   { href: '/home', icon: Home, label: 'For You' },
@@ -106,8 +107,15 @@ export function BottomNav() {
               )}
             >
               {item.isCreate ? (
-                 <div className="absolute top-1 left-1/2 -translate-x-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-background text-white shadow-lg ring-2 ring-teal-600 transition-transform hover:scale-105">
-                    <item.icon className="h-7 w-7 text-primary" />
+                 <div className="absolute top-1 left-1/2 -translate-x-1/2 flex h-12 w-12 items-center justify-center">
+                   <Image
+                     src="/Images/CR%20BT.jpg"
+                     alt="Create"
+                     width={48}
+                     height={48}
+                     className="rounded-xl"
+                     priority
+                   />
                  </div>
               ) : (
                 <div className="relative">

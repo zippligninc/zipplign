@@ -478,6 +478,7 @@ export default function ProfilePage() {
                           className="absolute inset-0 w-full h-full object-cover"
                           muted
                           playsInline
+                          preload="metadata"
                         />
                       ) : (
                         <Image src={clip.media_url} alt="Zippclip" fill className="object-cover" />
@@ -548,6 +549,7 @@ export default function ProfilePage() {
                         className="absolute inset-0 w-full h-full object-cover"
                         muted
                         playsInline
+                        preload="metadata"
                       />
                     ) : (
                       <Image src={clip.media_url} alt="Liked Zippclip" fill className="object-cover" />
